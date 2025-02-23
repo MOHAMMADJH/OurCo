@@ -5,6 +5,7 @@ import Navbar from "./navigation/Navbar";
 import HeroSection from "./sections/HeroSection";
 import ServicesSection from "./sections/ServicesSection";
 import ProjectPortfolio from "./sections/ProjectPortfolio";
+import ClientsSection from "./sections/ClientsSection";
 import ContactSection from "./sections/ContactSection";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -18,6 +19,7 @@ const Home = () => {
         <HeroSection />
         <ServicesSection />
         <ProjectPortfolio />
+        <ClientsSection />
         <BlogSection />
         <FAQSection />
         <ContactSection />
