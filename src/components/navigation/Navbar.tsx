@@ -37,6 +37,7 @@ const Navbar = ({
     { title: translations[currentLang].nav.blog, href: "/blog" },
     { title: translations[currentLang].nav.faq, href: "/faq" },
     { title: translations[currentLang].nav.contact, href: "/contact" },
+    { title: "لوحة التحكم", href: "/dashboard" },
   ];
 
   return (
