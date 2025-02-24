@@ -13,6 +13,7 @@ import DashboardServicesPage from "./pages/dashboard/services";
 import DashboardProjectsPage from "./pages/dashboard/projects";
 import DashboardClientsPage from "./pages/dashboard/clients";
 import DashboardBlogPage from "./pages/dashboard/blog";
+import BlogEditPage from "./pages/dashboard/blog/edit";
 import routes from "tempo-routes";
 
 const App = () => {
