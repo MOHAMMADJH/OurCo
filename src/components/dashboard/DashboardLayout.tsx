@@ -11,8 +11,10 @@ import {
   Building2,
   MessageSquare,
   LogOut,
+  FolderKanban,
 } from "lucide-react";
 import { Button } from "../ui/button";
+import { Link, useLocation } from "react-router-dom";
 
 interface SidebarItem {
   icon: React.ReactNode;
@@ -27,14 +29,14 @@ const sidebarItems: SidebarItem[] = [
     href: "/dashboard",
   },
   {
+    icon: <FolderKanban className="h-5 w-5" />,
+    label: "المشاريع",
+    href: "/dashboard/projects",
+  },
+  {
     icon: <Briefcase className="h-5 w-5" />,
     label: "الخدمات",
     href: "/dashboard/services",
-  },
-  {
-    icon: <FileText className="h-5 w-5" />,
-    label: "المشاريع",
-    href: "/dashboard/projects",
   },
   {
     icon: <Building2 className="h-5 w-5" />,
@@ -69,6 +71,7 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [isSidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const location = useLocation();
 
   return (
     <div className="min-h-screen bg-[#0B1340] text-white">
@@ -97,14 +100,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {/* Navigation */}
         <nav className="flex-1 space-y-2 p-4">
           {sidebarItems.map((item) => (
-            <a
+            <Link
               key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+              to={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-white/10",
+                location.pathname === item.href
+                  ? "bg-white/10 text-white"
+                  : "text-gray-300 hover:text-white",
+              )}
             >
               {item.icon}
               {!isSidebarCollapsed && <span>{item.label}</span>}
-            </a>
+            </Link>
           ))}
         </nav>
 
