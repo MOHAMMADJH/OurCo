@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import ProjectFormDialog, {
+  ProjectFormData,
+} from "@/components/projects/ProjectFormDialog";
+import ProjectDeleteDialog from "@/components/projects/ProjectDeleteDialog";
+import ProjectDetailsDialog from "@/components/projects/ProjectDetailsDialog";
 import {
   Plus,
   Search,
@@ -18,6 +23,7 @@ interface Project {
   id: string;
   title: string;
   client: string;
+  description: string;
   status: "active" | "completed" | "pending";
   deadline: string;
   budget: string;
@@ -29,6 +35,7 @@ const mockProjects: Project[] = [
     id: "1",
     title: "تطوير موقع شركة التقنية",
     client: "شركة التقنية المتقدمة",
+    description: "تطوير موقع إلكتروني متكامل مع لوحة تحكم وواجهة مستخدم حديثة",
     status: "active",
     deadline: "2024-06-30",
     budget: "50,000 ر.س",
@@ -38,6 +45,7 @@ const mockProjects: Project[] = [
     id: "2",
     title: "تصميم هوية بصرية",
     client: "مؤسسة الإبداع",
+    description: "تصميم هوية بصرية كاملة تشمل الشعار والألوان والخطوط",
     status: "pending",
     deadline: "2024-05-15",
     budget: "15,000 ر.س",
@@ -47,6 +55,7 @@ const mockProjects: Project[] = [
     id: "3",
     title: "حملة تسويقية شاملة",
     client: "شركة الأغذية العالمية",
+    description: "تنفيذ حملة تسويقية متكاملة عبر منصات التواصل الاجتماعي",
     status: "completed",
     deadline: "2024-03-01",
     budget: "75,000 ر.س",
@@ -81,6 +90,52 @@ const getStatusText = (status: Project["status"]) => {
 };
 
 const ProjectsPage = () => {
+  const [projects, setProjects] = React.useState(mockProjects);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [formDialogOpen, setFormDialogOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = React.useState(false);
+  const [selectedProject, setSelectedProject] = React.useState<Project | null>(
+    null,
+  );
+  const [editMode, setEditMode] = React.useState(false);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleCreateProject = (data: ProjectFormData) => {
+    const newProject: Project = {
+      id: Date.now().toString(),
+      ...data,
+      progress: 0,
+    };
+    setProjects((prev) => [newProject, ...prev]);
+  };
+
+  const handleEditProject = (data: ProjectFormData) => {
+    if (!selectedProject) return;
+    setProjects((prev) =>
+      prev.map((project) =>
+        project.id === selectedProject.id ? { ...project, ...data } : project,
+      ),
+    );
+  };
+
+  const handleDeleteProject = () => {
+    if (!selectedProject) return;
+    setProjects((prev) =>
+      prev.filter((project) => project.id !== selectedProject.id),
+    );
+    setDeleteDialogOpen(false);
+  };
+
+  const filteredProjects = projects.filter(
+    (project) =>
+      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.client.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
   return (
     <DashboardLayout>
       <DashboardHeader
@@ -96,9 +151,18 @@ const ProjectsPage = () => {
             <Input
               placeholder="البحث عن مشروع..."
               className="border-white/10 bg-white/5 pr-10 text-right text-white placeholder:text-gray-400"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
             />
           </div>
-          <Button className="bg-[#FF6B00] hover:bg-[#FF8533]">
+          <Button
+            className="bg-[#FF6B00] hover:bg-[#FF8533]"
+            onClick={() => {
+              setEditMode(false);
+              setSelectedProject(null);
+              setFormDialogOpen(true);
+            }}
+          >
             <Plus className="mr-2 h-4 w-4" />
             إضافة مشروع جديد
           </Button>
@@ -106,7 +170,7 @@ const ProjectsPage = () => {
 
         {/* Projects Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {mockProjects.map((project) => (
+          {filteredProjects.map((project) => (
             <Card
               key={project.id}
               className="border-white/10 bg-white/5 backdrop-blur-sm"
@@ -121,6 +185,10 @@ const ProjectsPage = () => {
                       variant="ghost"
                       size="icon"
                       className="text-gray-400 hover:text-white"
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setDetailsDialogOpen(true);
+                      }}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
@@ -128,6 +196,11 @@ const ProjectsPage = () => {
                       variant="ghost"
                       size="icon"
                       className="text-gray-400 hover:text-white"
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setEditMode(true);
+                        setFormDialogOpen(true);
+                      }}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -135,6 +208,10 @@ const ProjectsPage = () => {
                       variant="ghost"
                       size="icon"
                       className="text-gray-400 hover:text-red-500"
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setDeleteDialogOpen(true);
+                      }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -176,6 +253,32 @@ const ProjectsPage = () => {
             </Card>
           ))}
         </div>
+
+        {/* Project Form Dialog */}
+        <ProjectFormDialog
+          open={formDialogOpen}
+          onOpenChange={setFormDialogOpen}
+          onSubmit={editMode ? handleEditProject : handleCreateProject}
+          initialData={editMode ? selectedProject || {} : {}}
+          mode={editMode ? "edit" : "create"}
+        />
+
+        {/* Project Delete Dialog */}
+        <ProjectDeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDeleteProject}
+          projectTitle={selectedProject?.title || ""}
+        />
+
+        {/* Project Details Dialog */}
+        {selectedProject && (
+          <ProjectDetailsDialog
+            open={detailsDialogOpen}
+            onOpenChange={setDetailsDialogOpen}
+            project={selectedProject}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
