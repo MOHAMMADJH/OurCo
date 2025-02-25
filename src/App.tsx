@@ -14,6 +14,7 @@ import DashboardProjectsPage from "./pages/dashboard/projects";
 import DashboardClientsPage from "./pages/dashboard/clients";
 import DashboardBlogPage from "./pages/dashboard/blog";
 import BlogEditPage from "./pages/dashboard/blog/edit";
+import MessagesPage from "./pages/dashboard/messages";
 import routes from "tempo-routes";
 
 const App = () => {
@@ -38,6 +39,7 @@ const App = () => {
         <Route path="/dashboard/blog" element={<DashboardBlogPage />} />
         <Route path="/dashboard/blog/edit" element={<BlogEditPage />} />
         <Route path="/dashboard/blog/edit/:id" element={<BlogEditPage />} />
+        <Route path="/dashboard/messages" element={<MessagesPage />} />
 
         {/* Add this before any catchall route */}
         {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
