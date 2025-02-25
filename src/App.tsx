@@ -15,6 +15,7 @@ import DashboardClientsPage from "./pages/dashboard/clients";
 import DashboardBlogPage from "./pages/dashboard/blog";
 import BlogEditPage from "./pages/dashboard/blog/edit";
 import MessagesPage from "./pages/dashboard/messages";
+import LoginPage from "./pages/auth/login";
 import routes from "tempo-routes";
 
 const App = () => {
@@ -24,6 +25,7 @@ const App = () => {
       {import.meta.env.VITE_TEMPO && useRoutes(routes)}
 
       <Routes>
+        <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/services" element={<ServicesPage />} />
