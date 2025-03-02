@@ -18,6 +18,7 @@ import MessagesPage from "./pages/dashboard/messages";
 import LoginPage from "./pages/auth/login";
 import routes from "tempo-routes";
 import DashboardUsersPage from "./pages/dashboard/users";
+import ProfilePage from "./pages/dashboard/profile";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
 const App = () => {
@@ -45,6 +46,7 @@ const App = () => {
         <Route path="/dashboard/blog/edit" element={<ProtectedRoute element={<BlogEditPage />} />} />
         <Route path="/dashboard/blog/edit/:id" element={<ProtectedRoute element={<BlogEditPage />} />} />
         <Route path="/dashboard/messages" element={<ProtectedRoute element={<MessagesPage />} />} />
+        <Route path="/dashboard/profile" element={<ProtectedRoute element={<ProfilePage />} />} />
 
         {/* Add this before any catchall route */}
         {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}

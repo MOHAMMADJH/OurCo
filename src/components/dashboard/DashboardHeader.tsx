@@ -2,6 +2,7 @@ import React from "react";
 import { Bell, Search } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import UserProfileMenu from "./UserProfileMenu";
 
 interface DashboardHeaderProps {
   title: string;
@@ -38,6 +39,9 @@ const DashboardHeader = ({ title, subtitle }: DashboardHeaderProps) => {
               3
             </span>
           </Button>
+          
+          {/* User Profile Menu */}
+          <UserProfileMenu />
         </div>
       </div>
     </header>
