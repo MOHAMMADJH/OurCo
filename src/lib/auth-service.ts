@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const API_BASE_URL = 'http://localhost:8000';
+
 interface User {
   id: number;
   email: string;
@@ -44,7 +46,7 @@ class AuthService {
 
   async login(credentials: LoginCredentials): Promise<User> {
     try {
-      const response = await axios.post<AuthResponse>('/api/auth/login', credentials);
+      const response = await axios.post<AuthResponse>(`${API_BASE_URL}/api/auth/login/`, credentials);
       this.setAuthData(response.data);
       return response.data.user;
     } catch (error) {
@@ -54,7 +56,7 @@ class AuthService {
 
   async register(data: RegisterData): Promise<User> {
     try {
-      const response = await axios.post<AuthResponse>('/api/auth/register', data);
+      const response = await axios.post<AuthResponse>(`${API_BASE_URL}/api/auth/register/`, data);
       this.setAuthData(response.data);
       return response.data.user;
     } catch (error) {

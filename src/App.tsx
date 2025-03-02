@@ -18,6 +18,7 @@ import MessagesPage from "./pages/dashboard/messages";
 import LoginPage from "./pages/auth/login";
 import routes from "tempo-routes";
 import DashboardUsersPage from "./pages/dashboard/users";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 
 const App = () => {
   return (
@@ -35,15 +36,15 @@ const App = () => {
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/dashboard/projects" element={<DashboardProjectsPage />} />
-        <Route path="/dashboard/services" element={<DashboardServicesPage />} />
-        <Route path="/dashboard/clients" element={<DashboardClientsPage />} />
-        <Route path="/dashboard/users" element={<DashboardUsersPage />} />
-        <Route path="/dashboard/blog" element={<DashboardBlogPage />} />
-        <Route path="/dashboard/blog/edit" element={<BlogEditPage />} />
-        <Route path="/dashboard/blog/edit/:id" element={<BlogEditPage />} />
-        <Route path="/dashboard/messages" element={<MessagesPage />} />
+        <Route path="/dashboard" element={<ProtectedRoute element={<DashboardPage />} />} />
+        <Route path="/dashboard/projects" element={<ProtectedRoute element={<DashboardProjectsPage />} />} />
+        <Route path="/dashboard/services" element={<ProtectedRoute element={<DashboardServicesPage />} />} />
+        <Route path="/dashboard/clients" element={<ProtectedRoute element={<DashboardClientsPage />} />} />
+        <Route path="/dashboard/users" element={<ProtectedRoute element={<DashboardUsersPage />} requireAdmin={true} />} />
+        <Route path="/dashboard/blog" element={<ProtectedRoute element={<DashboardBlogPage />} />} />
+        <Route path="/dashboard/blog/edit" element={<ProtectedRoute element={<BlogEditPage />} />} />
+        <Route path="/dashboard/blog/edit/:id" element={<ProtectedRoute element={<BlogEditPage />} />} />
+        <Route path="/dashboard/messages" element={<ProtectedRoute element={<MessagesPage />} />} />
 
         {/* Add this before any catchall route */}
         {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}

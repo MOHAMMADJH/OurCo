@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { authService } from '@/lib/auth-service';
+import { useAuth } from '@/hooks/useAuth';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -30,7 +31,7 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      const user = await authService.register(formData);
+      const user = await register(formData);
       if (user.is_admin) {
         navigate('/admin/dashboard');
       } else {

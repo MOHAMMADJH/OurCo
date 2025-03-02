@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn } from "lucide-react";
-import { authService } from '@/lib/auth-service';
+import { useAuth } from '@/hooks/useAuth';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -29,7 +30,7 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const user = await authService.login(formData);
+      const user = await login(formData);
       if (user.is_admin) {
         navigate('/admin/dashboard');
       } else {
