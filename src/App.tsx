@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, useRoutes } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./components/home";
 import AboutPage from "./pages/about";
 import ServicesPage from "./pages/services";
@@ -16,18 +16,21 @@ import DashboardBlogPage from "./pages/dashboard/blog";
 import BlogEditPage from "./pages/dashboard/blog/edit";
 import MessagesPage from "./pages/dashboard/messages";
 import LoginPage from "./pages/auth/login";
-import routes from "tempo-routes";
+// import routes from "tempo-routes"; // تعليق هذا الاستيراد إذا كان يسبب مشكلة
 import DashboardUsersPage from "./pages/dashboard/users";
 import ProfilePage from "./pages/dashboard/profile";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import DebugPage from "./pages/dashboard/debug";
 
 const App = () => {
+  // Handle tempo routes - نقوم بتعليق هذا الكود إذا كان يسبب مشكلة
+  // const tempoRoutes = useRoutes(import.meta.env.VITE_TEMPO ? routes : []);
+
   return (
     <>
-      {/* For the tempo routes */}
-      {import.meta.env.VITE_TEMPO && useRoutes(routes)}
-
+      {/* {tempoRoutes} */}
       <Routes>
+        {/* الصفحات العامة */}
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<AboutPage />} />
@@ -37,9 +40,11 @@ const App = () => {
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        
+        {/* صفحات لوحة التحكم */}
         <Route path="/dashboard" element={<ProtectedRoute element={<DashboardPage />} />} />
         <Route path="/dashboard/projects" element={<ProtectedRoute element={<DashboardProjectsPage />} />} />
-        <Route path="/dashboard/services" element={<ProtectedRoute element={<DashboardServicesPage />} />} />
+        <Route path="/dashboard/services" element={<ProtectedRoute element={<DashboardServicesPage />} requireAdmin={true} />} />
         <Route path="/dashboard/clients" element={<ProtectedRoute element={<DashboardClientsPage />} />} />
         <Route path="/dashboard/users" element={<ProtectedRoute element={<DashboardUsersPage />} requireAdmin={true} />} />
         <Route path="/dashboard/blog" element={<ProtectedRoute element={<DashboardBlogPage />} />} />
@@ -47,9 +52,22 @@ const App = () => {
         <Route path="/dashboard/blog/edit/:id" element={<ProtectedRoute element={<BlogEditPage />} />} />
         <Route path="/dashboard/messages" element={<ProtectedRoute element={<MessagesPage />} />} />
         <Route path="/dashboard/profile" element={<ProtectedRoute element={<ProfilePage />} />} />
-
-        {/* Add this before any catchall route */}
-        {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
+        <Route path="/dashboard/debug" element={<ProtectedRoute element={<DebugPage />} />} />
+        <Route 
+          path="/dashboard/settings" 
+          element={
+            <ProtectedRoute 
+              element={
+                <React.Suspense fallback={<div>Loading...</div>}>
+                  {React.createElement(React.lazy(() => import("./pages/dashboard/settings")))}
+                </React.Suspense>
+              } 
+            />
+          } 
+        />
+        
+        {/* توجيه للصفحة الرئيسية في حالة عدم العثور على المسار */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </>
   );

@@ -3,6 +3,7 @@ from rest_framework import viewsets, permissions, status, filters, renderers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
+from django.core.management import call_command
 
 from .models import ServiceCategory, Service, Testimonial, FAQ
 from .serializers import (
@@ -43,6 +44,17 @@ class ServiceViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['title', 'description', 'short_description']
     renderer_classes = [renderers.JSONRenderer]
+    
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def seed_default(self, request):
+        try:
+            call_command('seed_default_services')
+            return Response({'message': 'Default services seeded successfully'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to seed default services', 'detail': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:

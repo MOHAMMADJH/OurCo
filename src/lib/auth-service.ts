@@ -25,15 +25,18 @@ interface RegisterData {
 
 interface AuthResponse {
   user: User;
-  token: string;
+  access: string;
+  refresh: string;
 }
 
 class AuthService {
-  private token: string | null = null;
+  private accessToken: string | null = null;
+  private refreshToken: string | null = null;
   private user: User | null = null;
 
   constructor() {
-    this.token = localStorage.getItem('token');
+    this.accessToken = localStorage.getItem('accessToken');
+    this.refreshToken = localStorage.getItem('refreshToken');
     const userStr = localStorage.getItem('user');
     if (userStr) {
       try {
@@ -65,14 +68,16 @@ class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-    this.token = null;
+    this.accessToken = null;
+    this.refreshToken = null;
     this.user = null;
   }
 
   isAuthenticated(): boolean {
-    return !!this.token;
+    return !!this.accessToken && !!this.refreshToken;
   }
 
   isAdmin(): boolean {
@@ -80,7 +85,7 @@ class AuthService {
   }
 
   getToken(): string | null {
-    return this.token;
+    return this.accessToken;
   }
 
   getUser(): User | null {
@@ -88,10 +93,30 @@ class AuthService {
   }
 
   private setAuthData(data: AuthResponse): void {
-    this.token = data.token;
+    this.accessToken = data.access;
+    this.refreshToken = data.refresh;
     this.user = data.user;
-    localStorage.setItem('token', data.token);
+    localStorage.setItem('accessToken', data.access);
+    localStorage.setItem('refreshToken', data.refresh);
     localStorage.setItem('user', JSON.stringify(data.user));
+  }
+
+  async refreshAccessToken(): Promise<string | null> {
+    try {
+      if (!this.refreshToken) return null;
+
+      const response = await axios.post<{ access: string }>(
+        `${API_BASE_URL}/api/auth/token/refresh/`,
+        { refresh: this.refreshToken }
+      );
+
+      this.accessToken = response.data.access;
+      localStorage.setItem('accessToken', response.data.access);
+      return response.data.access;
+    } catch (error) {
+      this.logout();
+      return null;
+    }
   }
 }
 

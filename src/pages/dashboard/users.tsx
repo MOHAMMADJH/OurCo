@@ -74,6 +74,8 @@ const UsersPage = () => {
           <div className="relative w-64">
             <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
+              id="user-search"
+              name="user-search"
               placeholder="بحث عن مستخدم..."
               className="border-white/10 bg-white/5 pr-10 text-right text-white placeholder:text-gray-400"
             />

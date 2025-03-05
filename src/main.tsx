@@ -7,11 +7,12 @@ import { BrowserRouter } from "react-router-dom";
 import { TempoDevtools } from "tempo-devtools";
 TempoDevtools.init();
 
-const basename = import.meta.env.BASE_URL;
+// تغيير هنا: استخدام "/" كـ basename بدلاً من import.meta.env.BASE_URL
+// لأن BASE_URL قد تكون غير محددة بشكل صحيح في بيئة التطوير
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter basename={basename}>
+    <BrowserRouter basename="/">
       <App />
     </BrowserRouter>
   </React.StrictMode>,

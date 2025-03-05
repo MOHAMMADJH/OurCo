@@ -41,11 +41,30 @@ const ProfilePage = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically call an API to update the user profile
-    // For now, we'll just toggle the editing state
-    setIsEditing(false);
+    try {
+      // In a real application, you would call an API endpoint here
+      // For example: await axios.put(`${API_BASE_URL}/api/users/profile`, formData);
+      
+      // Update the user in local storage to reflect changes immediately
+      if (user) {
+        const updatedUser = {
+          ...user,
+          first_name: formData.first_name,
+          last_name: formData.last_name
+        };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        // Force a refresh of the auth state
+        window.location.reload();
+      }
+      
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      // In a real app, you would show an error message to the user
+    }
   };
 
   return (

@@ -7,6 +7,7 @@ interface User {
   first_name: string;
   last_name: string;
   is_admin: boolean;
+  role: string;
 }
 
 interface AuthState {
@@ -22,18 +23,19 @@ interface AuthState {
     last_name: string;
   }) => Promise<User>;
   logout: () => void;
+  setAdminStatus: (isAdmin: boolean) => void;
 }
 
 export const useAuth = create<AuthState>((set) => ({
-  isAuthenticated: !!localStorage.getItem('token'),
+  isAuthenticated: !!localStorage.getItem('accessToken'),
   user: JSON.parse(localStorage.getItem('user') || 'null'),
-  token: localStorage.getItem('token'),
+  token: localStorage.getItem('accessToken'),
 
   login: async (credentials) => {
     const user = await authService.login(credentials);
-    const token = 'dummy-token'; // In real app, this would come from the backend
+    const token = authService.getToken();
 
-    localStorage.setItem('token', token);
+    localStorage.setItem('accessToken', token);
     localStorage.setItem('user', JSON.stringify(user));
 
     set({ isAuthenticated: true, user, token });
@@ -42,9 +44,9 @@ export const useAuth = create<AuthState>((set) => ({
 
   register: async (userData) => {
     const user = await authService.register(userData);
-    const token = 'dummy-token'; // In real app, this would come from the backend
+    const token = authService.getToken();
 
-    localStorage.setItem('token', token);
+    localStorage.setItem('accessToken', token);
     localStorage.setItem('user', JSON.stringify(user));
 
     set({ isAuthenticated: true, user, token });
@@ -52,8 +54,25 @@ export const useAuth = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     set({ isAuthenticated: false, user: null, token: null });
   },
+
+  setAdminStatus: (isAdmin: boolean) => {
+    const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+    if (currentUser) {
+      // تحديث حقل is_admin وحقل role أيضًا للتوافقية
+      const updatedUser = { 
+        ...currentUser, 
+        is_admin: isAdmin,
+        role: isAdmin ? "admin" : "user" 
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      set({ user: updatedUser });
+      console.log('Admin status updated:', isAdmin);
+      console.log('Updated user:', updatedUser);
+    }
+  }
 }));

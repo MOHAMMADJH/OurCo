@@ -1,73 +1,55 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { ArrowLeft } from "lucide-react";
-
-interface Service {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-}
+import { servicesService, type Service } from "@/lib/services-service";
+import { Loader2 } from "lucide-react";
 
 interface ServicesSectionProps {
-  services?: Service[];
   onServiceSelect?: (serviceId: string) => void;
 }
 
 const ServicesSection = ({
-  services = [
-    {
-      id: "1",
-      title: "صناعة الإعلانات المرئية",
-      description: "نحن نصنع محتويات إعلانية احترافية",
-      icon: "🎥",
-    },
-    {
-      id: "2",
-      title: "برمجة المواقع الإلكترونية",
-      description: "نصمم ونطور مواقع الويب الاحترافية",
-      icon: "💻",
-    },
-    {
-      id: "3",
-      title: "التسويق بالمؤثرين",
-      description: "نقدم لك شبكة واسعة من المؤثرين",
-      icon: "🌟",
-    },
-    {
-      id: "4",
-      title: "تطوير العلامات التجارية",
-      description: "نطور هويتك البصرية بشكل احترافي",
-      icon: "✨",
-    },
-    {
-      id: "5",
-      title: "تحسين محركات البحث",
-      description: "نضمن لك الظهور في نتائج البحث",
-      icon: "🔍",
-    },
-    {
-      id: "6",
-      title: "إدارة وسائل التواصل",
-      description: "نقدم محتوى متميز لمنصاتك",
-      icon: "📱",
-    },
-    {
-      id: "7",
-      title: "تصميم الجرافيك",
-      description: "نصمم هويتك البصرية بإبداع",
-      icon: "🎨",
-    },
-    {
-      id: "8",
-      title: "التصوير الاحترافي",
-      description: "نقدم خدمات تصوير عالية الجودة",
-      icon: "📸",
-    },
-  ],
   onServiceSelect = (id: string) => console.log(`Selected service: ${id}`),
 }: ServicesSectionProps) => {
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await servicesService.getServices();
+        setServices(response || []);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+        setError("Failed to load services");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="relative w-full bg-[#0B1340] px-4 py-16 text-right lg:px-8">
+        <div className="flex h-40 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#FF6B00]" />
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="relative w-full bg-[#0B1340] px-4 py-16 text-right lg:px-8">
+        <div className="text-center text-gray-400">{error}</div>
+      </section>
+    );
+  }
+
   return (
     <section className="relative w-full bg-[#0B1340] px-4 py-16 text-right lg:px-8">
       <div className="absolute inset-0">
@@ -99,13 +81,13 @@ const ServicesSection = ({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
               className="group cursor-pointer rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10"
-              onClick={() => onServiceSelect(service.id)}
+              onClick={() => onServiceSelect(service.id.toString())}
             >
-              <div className="mb-4 text-4xl">{service.icon}</div>
+              <div className="mb-4 text-4xl">{service.icon || "🔧"}</div>
               <h3 className="mb-2 text-xl font-bold text-white">
                 {service.title}
               </h3>
-              <p className="text-gray-300">{service.description}</p>
+              <p className="text-gray-300">{service.short_description || service.description}</p>
               <div className="mt-4 flex items-center justify-end">
                 <Button
                   variant="link"
