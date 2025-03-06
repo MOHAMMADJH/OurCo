@@ -63,7 +63,7 @@ const ProjectImagesPreview = ({ projectId }: ProjectImagesPreviewProps) => {
                   className="h-full w-full object-cover"
                 />
                 {image.is_primary && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-[#FF6B00]/80 text-white text-xs text-center py-1">
+                  <div className="absolute bottom-0 left-0 right-0 bg-[#FF6B00]/90 text-white text-sm font-medium py-1.5">
                     الصورة الرئيسية
                   </div>
                 )}
@@ -83,18 +83,19 @@ const ProjectImagesPreview = ({ projectId }: ProjectImagesPreviewProps) => {
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-center h-32 border border-dashed border-white/20 rounded-md bg-white/5">
-            <div className="text-center">
-              <ImagePlus className="h-10 w-10 mx-auto text-gray-400 mb-2" />
-              <p className="text-gray-400 text-sm">لا توجد صور</p>
+            <div className="text-center space-y-2">
+              <ImagePlus className="h-10 w-10 mx-auto text-gray-400" />
+              <p className="text-gray-300 text-base font-medium">لا توجد صور</p>
+              <p className="text-gray-400 text-sm">قم بإضافة صور لعرض مشروعك بشكل أفضل</p>
             </div>
           </div>
           <Button
             type="button"
             variant="outline"
-            className="border-white/10 hover:bg-white/5 w-full"
+            className="border-white/10 hover:bg-white/5 w-full font-medium text-base flex items-center justify-center gap-2"
             onClick={() => setImagesDialogOpen(true)}
           >
-            <ImagePlus className="ml-2 h-4 w-4" />
+            <ImagePlus className="h-5 w-5" />
             إضافة صور للمشروع
           </Button>
         </div>

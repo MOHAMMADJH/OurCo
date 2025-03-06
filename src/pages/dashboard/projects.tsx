@@ -280,24 +280,24 @@ const ProjectsPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="border-white/10 bg-white/5 overflow-hidden hover:border-white/20 transition-colors">
+                <Card className="border-white/10 bg-white/5 overflow-hidden hover:bg-white/[0.07] hover:border-white/20 transition-all duration-200 transform hover:-translate-y-1">
                   <CardContent className="p-0">
-                    <div className="relative h-40">
+                    <div className="relative h-40 group">
                       {project.images && project.images.length > 0 ? (
                         <img
                           src={project.images.find(img => img.is_primary)?.image || project.images[0]?.image || '/placeholder-project.jpg'}
                           alt={project.title}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-[#0B1340]/80 to-[#0B1340]">
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-[#0B1340]/90 to-[#0B1340]">
                           <Image className="h-16 w-16 text-white/20" />
                         </div>
                       )}
                       <Button
                         size="icon"
                         variant="outline"
-                        className="absolute top-2 left-2 h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 border-white/10"
+                        className="absolute top-2 left-2 h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 border-white/20 opacity-0 group-hover:opacity-100 transition-all duration-200"
                         onClick={() => {
                           setSelectedProject(project);
                           setImagesDialogOpen(true);
@@ -306,53 +306,55 @@ const ProjectsPage = () => {
                         <Image className="h-4 w-4 text-white" />
                       </Button>
                       <Badge
-                        className={`absolute top-2 right-2 ${getStatusColor(project.status)}`}
+                        className={`absolute top-2 right-2 ${getStatusColor(project.status)} shadow-lg`}
                       >
                         {getStatusText(project.status)}
                       </Badge>
                     </div>
 
-                    <div className="p-6">
-                      <h3 className="text-lg font-semibold mb-2 line-clamp-1">
+                    <div className="p-6 space-y-4">
+                      <h3 className="text-xl font-bold mb-3 line-clamp-1 text-white">
                         {project.title}
                       </h3>
                       
-                      <div className="flex items-center text-sm text-gray-400 mb-1">
-                        <User className="h-3.5 w-3.5 ml-1" />
-                        <span className="line-clamp-1">{project.client?.name || 'عميل غير معروف'}</span>
-                      </div>
-                      
-                      <div className="flex items-center text-sm text-gray-400 mb-1">
-                        <Calendar className="h-3.5 w-3.5 ml-1" />
-                        <span>
-                          {new Date(project.deadline).toLocaleDateString("ar-SA")}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center text-sm text-gray-400 mb-4">
-                        <DollarSign className="h-3.5 w-3.5 ml-1" />
-                        <span>{formatCurrency(project.budget)}</span>
-                      </div>
-                      
-                      <div className="mb-6">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-gray-400">نسبة الإنجاز</span>
-                          <span className="font-semibold">{project.progress}%</span>
+                      <div className="space-y-2">
+                        <div className="flex items-center text-sm text-gray-300">
+                          <User className="h-4 w-4 ml-2 text-gray-400" />
+                          <span className="line-clamp-1 font-medium">{project.client?.name || 'عميل غير معروف'}</span>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                        
+                        <div className="flex items-center text-sm text-gray-300">
+                          <Calendar className="h-4 w-4 ml-2 text-gray-400" />
+                          <span className="font-medium">
+                            {new Date(project.deadline).toLocaleDateString("ar-SA")}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center text-sm text-gray-300">
+                          <DollarSign className="h-4 w-4 ml-2 text-gray-400" />
+                          <span className="font-medium">{formatCurrency(project.budget)}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-2">
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-300">نسبة الإنجاز</span>
+                          <span className="font-semibold text-white">{project.progress}%</span>
+                        </div>
+                        <div className="h-2.5 w-full rounded-full bg-white/10 overflow-hidden">
                           <div
-                            className={`h-full ${getProgressColor(project.progress)}`}
+                            className={`h-full ${getProgressColor(project.progress)} transition-all duration-300`}
                             style={{ width: `${project.progress}%` }}
                           ></div>
                         </div>
                       </div>
                       
-                      <div className="flex justify-between">
+                      <div className="flex justify-between pt-2">
                         <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-white/10 hover:bg-white/5 h-9 w-9 p-0"
+                            className="border-white/10 hover:bg-white/10 hover:border-white/20 h-9 w-9 p-0 transition-colors"
                             onClick={() => {
                               setSelectedProject(project);
                               setDetailsDialogOpen(true);
@@ -363,7 +365,7 @@ const ProjectsPage = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-white/10 hover:bg-blue-500/10 hover:text-blue-500 h-9 w-9 p-0"
+                            className="border-white/10 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/30 h-9 w-9 p-0 transition-colors"
                             onClick={() => {
                               setSelectedProject(project);
                               setProgressDialogOpen(true);
@@ -376,7 +378,7 @@ const ProjectsPage = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-white/10 hover:bg-yellow-500/10 hover:text-yellow-500 h-9 w-9 p-0"
+                            className="border-white/10 hover:bg-yellow-500/10 hover:text-yellow-400 hover:border-yellow-500/30 h-9 w-9 p-0 transition-colors"
                             onClick={() => {
                               setSelectedProject(project);
                               setFormDialogOpen(true);
@@ -387,7 +389,7 @@ const ProjectsPage = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-white/10 hover:bg-red-500/10 hover:text-red-500 h-9 w-9 p-0"
+                            className="border-white/10 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30 h-9 w-9 p-0 transition-colors"
                             onClick={() => {
                               setSelectedProject(project);
                               setDeleteDialogOpen(true);
