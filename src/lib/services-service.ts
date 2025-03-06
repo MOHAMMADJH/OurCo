@@ -90,9 +90,7 @@ class ServicesService {
 
   async getServices(): Promise<Service[]> {
     try {
-      const response = await axios.get<{ results: Service[] }>(`${API_BASE_URL}/api/services/`, {
-        headers: await this.getAuthHeader()
-      });
+      const response = await axios.get<{ results: Service[] }>(`${API_BASE_URL}/api/services/`);
       return response.data.results || [];
     } catch (error) {
       console.error('Error fetching services', error);

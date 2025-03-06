@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import ProjectFormDialog, {
 } from "@/components/projects/ProjectFormDialog";
 import ProjectDeleteDialog from "@/components/projects/ProjectDeleteDialog";
 import ProjectDetailsDialog from "@/components/projects/ProjectDetailsDialog";
+import ProjectImagesDialog from "@/components/projects/ProjectImagesDialog";
+import ProjectProgressDialog from "@/components/projects/ProjectProgressDialog";
 import {
   Plus,
   Search,
@@ -17,51 +19,46 @@ import {
   Edit2,
   Trash2,
   ExternalLink,
+  Image,
+  BarChart2,
+  User,
+  DollarSign,
 } from "lucide-react";
+import projectService from "@/lib/project-service";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { motion } from "framer-motion";
+
+interface ProjectImage {
+  id: string;
+  image: string;
+  caption?: string;
+  is_primary: boolean;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  type: "company" | "individual";
+  status: "active" | "inactive";
+}
 
 interface Project {
   id: string;
   title: string;
-  client: string;
   description: string;
   status: "active" | "completed" | "pending";
   deadline: string;
-  budget: string;
+  budget: number;
   progress: number;
+  client: {
+    id: string;
+    name: string;
+  };
+  images: ProjectImage[];
+  created_at: string;
+  updated_at: string;
 }
-
-const mockProjects: Project[] = [
-  {
-    id: "1",
-    title: "تطوير موقع شركة التقنية",
-    client: "شركة التقنية المتقدمة",
-    description: "تطوير موقع إلكتروني متكامل مع لوحة تحكم وواجهة مستخدم حديثة",
-    status: "active",
-    deadline: "2024-06-30",
-    budget: "50,000 ر.س",
-    progress: 65,
-  },
-  {
-    id: "2",
-    title: "تصميم هوية بصرية",
-    client: "مؤسسة الإبداع",
-    description: "تصميم هوية بصرية كاملة تشمل الشعار والألوان والخطوط",
-    status: "pending",
-    deadline: "2024-05-15",
-    budget: "15,000 ر.س",
-    progress: 0,
-  },
-  {
-    id: "3",
-    title: "حملة تسويقية شاملة",
-    client: "شركة الأغذية العالمية",
-    description: "تنفيذ حملة تسويقية متكاملة عبر منصات التواصل الاجتماعي",
-    status: "completed",
-    deadline: "2024-03-01",
-    budget: "75,000 ر.س",
-    progress: 100,
-  },
-];
 
 const getStatusColor = (status: Project["status"]) => {
   switch (status) {
@@ -89,197 +86,385 @@ const getStatusText = (status: Project["status"]) => {
   }
 };
 
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('ar-SA', {
+    style: 'currency',
+    currency: 'SAR',
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+const getProgressColor = (progress: number) => {
+  if (progress < 30) return "bg-red-500";
+  if (progress < 70) return "bg-yellow-500";
+  return "bg-green-500";
+};
+
 const ProjectsPage = () => {
-  const [projects, setProjects] = React.useState(mockProjects);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [formDialogOpen, setFormDialogOpen] = React.useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [detailsDialogOpen, setDetailsDialogOpen] = React.useState(false);
-  const [selectedProject, setSelectedProject] = React.useState<Project | null>(
-    null,
-  );
-  const [editMode, setEditMode] = React.useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Project["status"] | "all">("all");
+  
+  // Dialog states
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [imagesDialogOpen, setImagesDialogOpen] = useState(false);
+  const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+  
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const data = await projectService.getProjects();
+      setProjects(data);
+      setError(null);
+    } catch (err) {
+      setError('حدث خطأ أثناء تحميل المشاريع');
+      console.error('Error fetching projects:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCreateProject = (data: ProjectFormData) => {
-    const newProject: Project = {
-      id: Date.now().toString(),
-      ...data,
-      progress: 0,
-    };
-    setProjects((prev) => [newProject, ...prev]);
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const handleCreateProject = async (data: ProjectFormData) => {
+    try {
+      await projectService.createProject(data);
+      fetchProjects();
+      setFormDialogOpen(false);
+    } catch (err) {
+      console.error('Error creating project:', err);
+      setError('حدث خطأ أثناء إنشاء المشروع');
+    }
   };
 
-  const handleEditProject = (data: ProjectFormData) => {
-    if (!selectedProject) return;
-    setProjects((prev) =>
-      prev.map((project) =>
-        project.id === selectedProject.id ? { ...project, ...data } : project,
-      ),
-    );
+  const handleUpdateProject = async (id: string, data: Partial<ProjectFormData>) => {
+    try {
+      await projectService.updateProject(id, data);
+      fetchProjects();
+      setFormDialogOpen(false);
+    } catch (err) {
+      console.error('Error updating project:', err);
+      setError('حدث خطأ أثناء تحديث المشروع');
+    }
   };
 
-  const handleDeleteProject = () => {
-    if (!selectedProject) return;
-    setProjects((prev) =>
-      prev.filter((project) => project.id !== selectedProject.id),
-    );
-    setDeleteDialogOpen(false);
+  const handleDeleteProject = async (id: string) => {
+    try {
+      await projectService.deleteProject(id);
+      fetchProjects();
+      setDeleteDialogOpen(false);
+    } catch (err) {
+      console.error('Error deleting project:', err);
+      setError('حدث خطأ أثناء حذف المشروع');
+    }
   };
 
-  const filteredProjects = projects.filter(
-    (project) =>
+  const filteredProjects = projects.filter((project) => {
+    // Filter by search query
+    const matchesSearch = 
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.client.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+      (project.client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+      project.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Filter by status
+    const matchesStatus = statusFilter === "all" || project.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <DashboardLayout>
       <DashboardHeader
         title="إدارة المشاريع"
-        subtitle="عرض وإدارة جميع المشاريع"
+        subtitle="إدارة وتتبع جميع مشاريع الشركة"
       />
 
-      <div className="p-6">
-        {/* Actions Bar */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-full sm:w-96">
+      <div className="space-y-6 p-6">
+        {error && (
+          <div className="rounded-lg bg-red-500/10 p-4 text-red-500">
+            {error}
+          </div>
+        )}
+
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="relative flex-1 w-full">
             <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
               placeholder="البحث عن مشروع..."
-              className="border-white/10 bg-white/5 pr-10 text-right text-white placeholder:text-gray-400"
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border-white/10 bg-white/5 pr-10 text-right text-white w-full"
             />
           </div>
-          <Button
-            className="bg-[#FF6B00] hover:bg-[#FF8533]"
-            onClick={() => {
-              setEditMode(false);
-              setSelectedProject(null);
-              setFormDialogOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            إضافة مشروع جديد
-          </Button>
-        </div>
-
-        {/* Projects Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.map((project) => (
-            <Card
-              key={project.id}
-              className="border-white/10 bg-white/5 backdrop-blur-sm"
+          
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as any)}
             >
-              <CardContent className="p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <Badge className={getStatusColor(project.status)}>
-                    {getStatusText(project.status)}
-                  </Badge>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-400 hover:text-white"
-                      onClick={() => {
-                        setSelectedProject(project);
-                        setDetailsDialogOpen(true);
-                      }}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-400 hover:text-white"
-                      onClick={() => {
-                        setSelectedProject(project);
-                        setEditMode(true);
-                        setFormDialogOpen(true);
-                      }}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-400 hover:text-red-500"
-                      onClick={() => {
-                        setSelectedProject(project);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <h3 className="mb-2 text-xl font-bold text-white">
-                  {project.title}
-                </h3>
-                <p className="mb-4 text-sm text-gray-400">{project.client}</p>
-
-                <div className="mb-4 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">الميزانية:</span>
-                    <span className="text-white">{project.budget}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">الموعد النهائي:</span>
-                    <div className="flex items-center gap-1 text-white">
-                      <Calendar className="h-4 w-4" />
-                      {project.deadline}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">التقدم:</span>
-                    <span className="text-white">{project.progress}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-[#FF6B00] transition-all"
-                      style={{ width: `${project.progress}%` }}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              <SelectTrigger className="w-[180px] border-white/10 bg-white/5 text-white">
+                <SelectValue placeholder="فلترة حسب الحالة" />
+              </SelectTrigger>
+              <SelectContent className="border-white/10 bg-[#0B1340] text-white">
+                <SelectItem value="all">جميع المشاريع</SelectItem>
+                <SelectItem value="active">المشاريع النشطة</SelectItem>
+                <SelectItem value="pending">قيد الانتظار</SelectItem>
+                <SelectItem value="completed">المشاريع المكتملة</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button
+              onClick={() => {
+                setSelectedProject(null);
+                setFormDialogOpen(true);
+              }}
+              className="bg-[#FF6B00] hover:bg-[#FF6B00]/90"
+            >
+              <Plus className="ml-2 h-4 w-4" />
+              مشروع جديد
+            </Button>
+          </div>
         </div>
 
-        {/* Project Form Dialog */}
-        <ProjectFormDialog
-          open={formDialogOpen}
-          onOpenChange={setFormDialogOpen}
-          onSubmit={editMode ? handleEditProject : handleCreateProject}
-          initialData={editMode ? selectedProject || {} : {}}
-          mode={editMode ? "edit" : "create"}
-        />
+        {loading ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="border-white/10 bg-white/5">
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-3/4 mb-4" />
+                  <Skeleton className="h-4 w-1/2 mb-2" />
+                  <Skeleton className="h-4 w-full mb-4" />
+                  <Skeleton className="h-6 w-1/3 mb-4" />
+                  <div className="flex justify-between mt-4">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredProjects.length === 0 ? (
+          <div className="rounded-lg border border-white/10 bg-white/5 p-12 text-center">
+            <h3 className="text-xl font-semibold mb-2">لا توجد مشاريع</h3>
+            <p className="text-gray-400 mb-6">
+              {searchQuery || statusFilter !== "all"
+                ? "لا توجد مشاريع تطابق معايير البحث الخاصة بك"
+                : "لم يتم إضافة أي مشاريع حتى الآن"}
+            </p>
+            <Button
+              onClick={() => {
+                setSelectedProject(null);
+                setFormDialogOpen(true);
+              }}
+              className="bg-[#FF6B00] hover:bg-[#FF6B00]/90"
+            >
+              <Plus className="ml-2 h-4 w-4" />
+              إضافة مشروع جديد
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProjects.map((project) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="border-white/10 bg-white/5 overflow-hidden hover:border-white/20 transition-colors">
+                  <CardContent className="p-0">
+                    <div className="relative h-40">
+                      {project.images && project.images.length > 0 ? (
+                        <img
+                          src={project.images.find(img => img.is_primary)?.image || project.images[0]?.image || '/placeholder-project.jpg'}
+                          alt={project.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-[#0B1340]/80 to-[#0B1340]">
+                          <Image className="h-16 w-16 text-white/20" />
+                        </div>
+                      )}
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="absolute top-2 left-2 h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 border-white/10"
+                        onClick={() => {
+                          setSelectedProject(project);
+                          setImagesDialogOpen(true);
+                        }}
+                      >
+                        <Image className="h-4 w-4 text-white" />
+                      </Button>
+                      <Badge
+                        className={`absolute top-2 right-2 ${getStatusColor(project.status)}`}
+                      >
+                        {getStatusText(project.status)}
+                      </Badge>
+                    </div>
 
-        {/* Project Delete Dialog */}
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold mb-2 line-clamp-1">
+                        {project.title}
+                      </h3>
+                      
+                      <div className="flex items-center text-sm text-gray-400 mb-1">
+                        <User className="h-3.5 w-3.5 ml-1" />
+                        <span className="line-clamp-1">{project.client?.name || 'عميل غير معروف'}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-gray-400 mb-1">
+                        <Calendar className="h-3.5 w-3.5 ml-1" />
+                        <span>
+                          {new Date(project.deadline).toLocaleDateString("ar-SA")}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-gray-400 mb-4">
+                        <DollarSign className="h-3.5 w-3.5 ml-1" />
+                        <span>{formatCurrency(project.budget)}</span>
+                      </div>
+                      
+                      <div className="mb-6">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-400">نسبة الإنجاز</span>
+                          <span className="font-semibold">{project.progress}%</span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                          <div
+                            className={`h-full ${getProgressColor(project.progress)}`}
+                            style={{ width: `${project.progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-white/10 hover:bg-white/5 h-9 w-9 p-0"
+                            onClick={() => {
+                              setSelectedProject(project);
+                              setDetailsDialogOpen(true);
+                            }}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-white/10 hover:bg-blue-500/10 hover:text-blue-500 h-9 w-9 p-0"
+                            onClick={() => {
+                              setSelectedProject(project);
+                              setProgressDialogOpen(true);
+                            }}
+                          >
+                            <BarChart2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-white/10 hover:bg-yellow-500/10 hover:text-yellow-500 h-9 w-9 p-0"
+                            onClick={() => {
+                              setSelectedProject(project);
+                              setFormDialogOpen(true);
+                            }}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-white/10 hover:bg-red-500/10 hover:text-red-500 h-9 w-9 p-0"
+                            onClick={() => {
+                              setSelectedProject(project);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Project Form Dialog */}
+      <ProjectFormDialog
+        open={formDialogOpen}
+        onOpenChange={setFormDialogOpen}
+        onSubmit={selectedProject 
+          ? (data) => handleUpdateProject(selectedProject.id, data) 
+          : handleCreateProject
+        }
+        defaultValues={selectedProject ? {
+          title: selectedProject.title,
+          description: selectedProject.description,
+          client_id: selectedProject.client?.id || '',
+          status: selectedProject.status,
+          deadline: selectedProject.deadline,
+          budget: selectedProject.budget,
+          progress: selectedProject.progress,
+        } : undefined}
+        projectId={selectedProject?.id}
+      />
+
+      {/* Project Delete Dialog */}
+      {selectedProject && (
         <ProjectDeleteDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          onConfirm={handleDeleteProject}
-          projectTitle={selectedProject?.title || ""}
+          projectId={selectedProject.id}
+          projectTitle={selectedProject.title}
+          onDelete={() => handleDeleteProject(selectedProject.id)}
         />
+      )}
 
-        {/* Project Details Dialog */}
-        {selectedProject && (
-          <ProjectDetailsDialog
-            open={detailsDialogOpen}
-            onOpenChange={setDetailsDialogOpen}
-            project={selectedProject}
-          />
-        )}
-      </div>
+      {/* Project Details Dialog */}
+      {selectedProject && (
+        <ProjectDetailsDialog
+          open={detailsDialogOpen}
+          onOpenChange={setDetailsDialogOpen}
+          projectId={selectedProject.id}
+        />
+      )}
+
+      {/* Project Images Dialog */}
+      {selectedProject && (
+        <ProjectImagesDialog
+          open={imagesDialogOpen}
+          onOpenChange={setImagesDialogOpen}
+          projectId={selectedProject.id}
+        />
+      )}
+
+      {/* Project Progress Dialog */}
+      {selectedProject && (
+        <ProjectProgressDialog
+          open={progressDialogOpen}
+          onOpenChange={setProgressDialogOpen}
+          projectId={selectedProject.id}
+          currentProgress={selectedProject.progress}
+          onProgressUpdated={fetchProjects}
+        />
+      )}
     </DashboardLayout>
   );
 };
