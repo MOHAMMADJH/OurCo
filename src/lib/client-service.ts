@@ -177,7 +177,8 @@ const clientService = {
         throw new Error('Failed to fetch client projects');
       }
       const data = await response.json();
-      return data.results || [];
+      // API returns the array directly, not wrapped in a 'results' property
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error('Error fetching client projects:', error);
       throw error;

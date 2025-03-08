@@ -275,13 +275,13 @@ const ClientsPage = () => {
                       <div className="flex justify-between">
                         <div>
                           <span className="text-sm text-gray-400">المشاريع:</span>{" "}
-                          <span className="text-sm font-medium">
+                          <span className="text-sm font-medium text-white">
                             {client.projects_count || 0}
                           </span>
                         </div>
                         <div>
                           <span className="text-sm text-gray-400">إجمالي القيمة:</span>{" "}
-                          <span className="text-sm font-medium">
+                          <span className="text-sm font-medium text-white" >
                             {(client.total_value || 0).toLocaleString()} ر.س
                           </span>
                         </div>

@@ -12,6 +12,7 @@ import { Mail, Phone, MapPin, Building2, Calendar } from "lucide-react";
 import { Client } from "@/lib/client-service";
 import clientService from "@/lib/client-service";
 import { Skeleton } from "../ui/skeleton";
+import projectService, { Project } from "@/lib/project-service";
 
 interface ClientDetailsDialogProps {
   open: boolean;
@@ -19,26 +20,16 @@ interface ClientDetailsDialogProps {
   clientId: string;
 }
 
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  deadline: string;
-  budget: string;
-  progress: number;
-}
-
 const getStatusColor = (status: string) => {
   switch (status) {
     case "active":
-      return "bg-green-500/10 text-green-500";
+      return "bg-green-500/20 text-green-400";
     case "completed":
-      return "bg-blue-500/10 text-blue-500";
+      return "bg-blue-500/20 text-blue-400";
     case "pending":
-      return "bg-yellow-500/10 text-yellow-500";
+      return "bg-amber-500/20 text-amber-400";
     default:
-      return "bg-gray-500/10 text-gray-500";
+      return "bg-gray-500/20 text-gray-400";
   }
 };
 
@@ -73,14 +64,71 @@ const ClientDetailsDialog = ({
       setError(null);
 
       try {
+        // Fetch client details
         const clientData = await clientService.getClient(clientId);
+        console.log("Client data fetched:", clientData);
         setClient(clientData);
 
+        // Fetch client projects using the projects API
+        console.log("Fetching projects for client ID:", clientId);
         const projectsData = await clientService.getClientProjects(clientId);
-        setProjects(projectsData);
+        console.log("Raw projects data:", projectsData);
+        
+        // Verify if projectsData is an array and has items
+        if (!Array.isArray(projectsData)) {
+          console.error("Projects data is not an array:", projectsData);
+          // Set empty projects instead of mock data
+          setProjects([]);
+          return;
+        }
+        
+        console.log("Number of projects fetched:", projectsData.length);
+        
+        // If no projects were returned, set empty projects
+        if (projectsData.length === 0) {
+          console.log("No projects returned from API");
+          setProjects([]);
+          return;
+        }
+        
+        // Format the projects data to match the Project interface
+        const formattedProjects = projectsData.map((project: any) => {
+          console.log("Processing project:", project);
+          
+          // Handle edge case where project data might be incomplete
+          if (!project || !project.id) {
+            console.error("Invalid project data:", project);
+            return null;
+          }
+          
+          return {
+            id: project.id,
+            title: project.title || "مشروع بدون عنوان",
+            description: project.description || '',
+            status: (project.status as "active" | "completed" | "pending") || "pending",
+            deadline: project.deadline || 'غير محدد',
+            budget: typeof project.budget === 'number' 
+              ? project.budget 
+              : parseFloat(project.budget) || 0,
+            progress: project.progress || 0,
+            client: {
+              id: clientId,
+              name: clientData.name
+            },
+            images: project.images || [],
+            created_at: project.created_at || '',
+            updated_at: project.updated_at || ''
+          };
+        }).filter(Boolean) as Project[]; // Filter out null values
+        
+        console.log("Formatted projects:", formattedProjects);
+        setProjects(formattedProjects);
       } catch (err) {
         console.error("Error fetching client details:", err);
         setError("حدث خطأ أثناء تحميل بيانات العميل");
+        
+        // Set empty projects instead of mock data
+        setProjects([]);
       } finally {
         setLoading(false);
       }
@@ -94,11 +142,11 @@ const ClientDetailsDialog = ({
   const getTypeColor = (type: "company" | "individual") => {
     switch (type) {
       case "company":
-        return "bg-blue-500/10 text-blue-500";
+        return "bg-blue-500/20 text-blue-400";
       case "individual":
-        return "bg-purple-500/10 text-purple-500";
+        return "bg-purple-500/20 text-purple-400";
       default:
-        return "bg-gray-500/10 text-gray-500";
+        return "bg-gray-500/20 text-gray-400";
     }
   };
 
@@ -113,11 +161,18 @@ const ClientDetailsDialog = ({
     }
   };
 
+  // Format budget for display
+  const formatBudget = (budget: number): string => {
+    return `${budget.toLocaleString()} ر.س`;
+  };
+
+  console.log("Current projects state:", projects);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-white/10 bg-[#0B1340] text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="border-white/15 bg-[#0B1340] text-slate-100 max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>تفاصيل العميل</DialogTitle>
+          <DialogTitle className="text-white text-xl mb-2">تفاصيل العميل</DialogTitle>
         </DialogHeader>
 
         {loading ? (
@@ -127,72 +182,80 @@ const ClientDetailsDialog = ({
             <Skeleton className="h-40 w-full" />
           </div>
         ) : error ? (
-          <div className="rounded-lg bg-red-500/10 p-4 text-red-500">
+          <div className="rounded-lg bg-red-500/15 p-4 text-red-400 border border-red-500/20">
             {error}
           </div>
         ) : client ? (
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 border-white/10 bg-white/5">
-              <TabsTrigger value="info">معلومات العميل</TabsTrigger>
-              <TabsTrigger value="projects">المشاريع ({projects.length})</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-white/5 rounded-lg mb-6 p-0 overflow-hidden">
+              <TabsTrigger 
+                value="info" 
+                className="py-3 px-4 font-medium data-[state=active]:bg-[#FF6B00] data-[state=active]:text-white rounded-none">
+                معلومات العميل
+              </TabsTrigger>
+              <TabsTrigger 
+                value="projects" 
+                className="py-3 px-4 font-medium data-[state=active]:bg-[#FF6B00] data-[state=active]:text-white rounded-none">
+                المشاريع ({projects.length})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="info" className="py-4">
               <div className="mb-6 flex flex-wrap items-center gap-2">
-                <Badge className={getTypeColor(client.type)}>
+                <Badge className={`${getTypeColor(client.type)} p-1.5 px-2.5`}>
                   {getTypeText(client.type)}
                 </Badge>
                 <Badge
                   className={
                     client.status === "active"
-                      ? "bg-green-500/10 text-green-500"
-                      : "bg-gray-500/10 text-gray-400"
+                      ? "bg-green-500/20 text-green-400 p-1.5 px-2.5"
+                      : "bg-gray-500/20 text-gray-400 p-1.5 px-2.5"
                   }
                 >
                   {client.status === "active" ? "نشط" : "غير نشط"}
                 </Badge>
               </div>
 
-              <h2 className="mb-2 text-2xl font-bold">{client.name}</h2>
+              <h2 className="mb-2 text-2xl font-bold text-white">{client.name}</h2>
               {client.company && (
-                <p className="mb-6 flex items-center gap-2 text-gray-400">
-                  <Building2 className="h-4 w-4" />
+                <p className="mb-6 flex items-center gap-2 text-slate-300">
+                  <Building2 className="h-4 w-4 text-slate-400" />
                   {client.company}
                 </p>
               )}
 
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-4">
-                  <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-                    <h3 className="mb-4 text-lg font-semibold">معلومات الاتصال</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
+                  <div className="rounded-lg border border-white/15 bg-white/10 p-5 shadow-md">
+                    <h3 className="mb-4 text-lg font-semibold text-white">معلومات الاتصال</h3>
+                    <div className="space-y-5">
+                      <div className="flex items-center gap-3">
                         <Mail className="h-5 w-5 text-[#FF6B00]" />
-                        <span>{client.email}</span>
+                        <span className="text-slate-200">{client.email}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <Phone className="h-5 w-5 text-[#FF6B00]" />
-                        <span>{client.phone}</span>
+                        <span className="text-slate-200">{client.phone}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <MapPin className="h-5 w-5 text-[#FF6B00]" />
-                        <span>{client.location}</span>
+                        <span className="text-slate-200">{client.location}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-                    <h3 className="mb-4 text-lg font-semibold">ملخص المشاريع</h3>
-                    <div className="space-y-4">
+                  <div className="rounded-lg border border-white/15 bg-white/10 p-5 shadow-md">
+                    <h3 className="mb-4 text-lg font-semibold text-white">ملخص المشاريع</h3>
+                    <div className="space-y-5">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">عدد المشاريع</span>
-                        <span className="font-semibold">{client.projects_count}</span>
+                        <span className="text-slate-300">عدد المشاريع</span>
+                        <span className="font-semibold text-white">{client.projects_count || projects.length}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">إجمالي القيمة</span>
-                        <span className="font-semibold">
+                        <span className="text-slate-300">إجمالي القيمة</span>
+                        <span className="font-semibold text-white">
                           {client.total_value.toLocaleString()} ر.س
                         </span>
                       </div>
@@ -204,50 +267,50 @@ const ClientDetailsDialog = ({
 
             <TabsContent value="projects" className="py-4">
               {projects.length === 0 ? (
-                <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center text-gray-400">
+                <div className="rounded-lg border border-white/15 bg-white/10 p-8 text-center text-slate-300">
                   لا توجد مشاريع لهذا العميل
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-5">
                   {projects.map((project) => (
                     <Card
                       key={project.id}
-                      className="border-white/10 bg-white/5"
+                      className="border-white/15 bg-white/10 hover:bg-white/15 transition-colors shadow-md"
                     >
-                      <CardContent className="p-4">
-                        <div className="mb-2 flex items-center justify-between">
-                          <Badge className={getStatusColor(project.status)}>
+                      <CardContent className="p-5">
+                        <div className="mb-3 flex items-center justify-between">
+                          <Badge className={`${getStatusColor(project.status)} p-1.5 px-2.5`}>
                             {getStatusText(project.status)}
                           </Badge>
-                          <div className="flex items-center gap-2 text-sm text-gray-400">
-                            <Calendar className="h-4 w-4" />
+                          <div className="flex items-center gap-2 text-sm text-slate-300">
+                            <Calendar className="h-4 w-4 text-slate-400" />
                             {project.deadline}
                           </div>
                         </div>
 
-                        <h4 className="mb-1 text-lg font-semibold">
+                        <h4 className="mb-2 text-xl font-semibold text-white">
                           {project.title}
                         </h4>
-                        <p className="mb-3 text-sm text-gray-400">
-                          {project.description.substring(0, 120)}
-                          {project.description.length > 120 ? "..." : ""}
+                        <p className="mb-4 text-sm text-slate-300 leading-relaxed">
+                          {project.description?.substring(0, 120)}
+                          {project.description?.length > 120 ? "..." : ""}
                         </p>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="text-sm">
-                            <span className="text-gray-400">الميزانية:</span>{" "}
-                            <span>{project.budget}</span>
+                            <span className="text-slate-400">الميزانية:</span>{" "}
+                            <span className="text-slate-200 font-medium">{formatBudget(project.budget)}</span>
                           </div>
                           <div className="text-sm">
-                            <span className="text-gray-400">نسبة الإنجاز:</span>{" "}
-                            <span>{project.progress}%</span>
+                            <span className="text-slate-400">نسبة الإنجاز:</span>{" "}
+                            <span className="text-slate-200 font-medium">{project.progress}%</span>
                           </div>
                         </div>
 
                         {/* Progress Bar */}
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
+                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-700/50">
                           <div
-                            className="h-full bg-[#FF6B00]"
+                            className="h-full bg-gradient-to-r from-[#FF6B00] to-[#FF9D55]"
                             style={{ width: `${project.progress}%` }}
                           ></div>
                         </div>
@@ -259,7 +322,7 @@ const ClientDetailsDialog = ({
             </TabsContent>
           </Tabs>
         ) : (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center text-gray-400">
+          <div className="rounded-lg border border-white/15 bg-white/10 p-8 text-center text-slate-300">
             لم يتم العثور على بيانات العميل
           </div>
         )}

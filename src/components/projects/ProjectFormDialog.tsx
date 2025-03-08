@@ -42,11 +42,11 @@ const ProjectFormDialog = ({
 
   const [formData, setFormData] = useState<ProjectFormData>({
     title: defaultValues.title || "",
-    client_id: defaultValues.client_id || "",
+    client_id: defaultValues.client_id ? String(defaultValues.client_id) : "",
     description: defaultValues.description || "",
     status: defaultValues.status || "pending",
     deadline: defaultValues.deadline || new Date().toISOString().split("T")[0],
-    budget: defaultValues.budget || 0,
+    budget: typeof defaultValues.budget === 'number' ? parseFloat(defaultValues.budget.toFixed(2)) : 0,
     progress: defaultValues.progress || 0,
   });
 
@@ -58,25 +58,65 @@ const ProjectFormDialog = ({
   // Reset form when the dialog opens or defaultValues changes
   useEffect(() => {
     if (open) {
+      // استخراج معرف العميل من مختلف الأنماط الممكنة
+      let clientId = "";
+      
+      // حالة 1: إذا كان client_id متوفر كمعرف
+      if (defaultValues.client_id && defaultValues.client_id !== "undefined") {
+        clientId = String(defaultValues.client_id);
+      } 
+      // حالة 2: إذا كان العميل متوفر ككائن
+      else if (defaultValues.client && typeof defaultValues.client === 'object' && defaultValues.client.id) {
+        clientId = String(defaultValues.client.id);
+      }
+      // حالة 3: إذا كان العميل متوفر كرقم فقط
+      else if (defaultValues.client && typeof defaultValues.client === 'number') {
+        clientId = String(defaultValues.client);
+      }
+      
+      console.log("Setting clientId in form to:", clientId);
+      
       setFormData({
         title: defaultValues.title || "",
-        client_id: defaultValues.client_id || "",
+        client_id: clientId,
         description: defaultValues.description || "",
         status: defaultValues.status || "pending",
         deadline: defaultValues.deadline || new Date().toISOString().split("T")[0],
-        budget: defaultValues.budget || 0,
+        budget: typeof defaultValues.budget === 'number' ? parseFloat(defaultValues.budget.toFixed(2)) : 0,
         progress: defaultValues.progress || 0,
       });
+      
       setValidationErrors({});
+      
+      console.log("Form data on open:", {
+        defaultClientId: defaultValues.client_id,
+        rawClientValue: defaultValues.client,
+        extractedClientId: clientId,
+        budget: defaultValues.budget,
+        formattedBudget: typeof defaultValues.budget === 'number' ? parseFloat(defaultValues.budget.toFixed(2)) : 0
+      });
+      
+      // تأكد من تحميل العملاء عند تحرير المشروع
       fetchClients();
     }
   }, [open, defaultValues]);
+
+  // Load clients only once when component mounts
+  useEffect(() => {
+    if (clients.length === 0) {
+      fetchClients();
+    }
+  }, []);
 
   const fetchClients = async () => {
     try {
       setLoadingClients(true);
       const data = await clientService.getClients();
-      setClients(data.filter((client) => client.status === "active"));
+      const activeClients = data.filter((client) => client.status === "active");
+      console.log("Fetched clients:", activeClients);
+      console.log("Current formData client_id:", formData.client_id);
+      
+      setClients(activeClients);
       setError(null);
     } catch (err) {
       console.error("Error fetching clients:", err);
@@ -117,19 +157,35 @@ const ProjectFormDialog = ({
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit(formData);
+      // Round budget to 2 decimal places before submitting
+      const formattedData = {
+        ...formData,
+        budget: parseFloat(formData.budget.toFixed(2))
+      };
+      onSubmit(formattedData);
     }
   };
 
   const handleBudgetChange = (value: string) => {
-    // Remove any non-digits and convert to number
-    const numericValue = parseFloat(value.replace(/[^\d]/g, ""));
-    setFormData({ ...formData, budget: isNaN(numericValue) ? 0 : numericValue });
+    // Remove any non-digits or dots
+    const sanitizedValue = value.replace(/[^\d.]/g, "");
+    
+    // Ensure we only have one decimal point
+    const parts = sanitizedValue.split('.');
+    const formattedValue = parts[0] + (parts.length > 1 ? '.' + parts.slice(1).join('') : '');
+    
+    // Don't immediately parse to number to allow proper typing
+    if (formattedValue === '') {
+      setFormData({ ...formData, budget: 0 });
+    } else {
+      const numericValue = parseFloat(formattedValue);
+      setFormData({ ...formData, budget: numericValue });
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-white/10 bg-[#0B1340] text-white sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="border-white/10 bg-[#0B1340] text-white sm:max-w-[600px] max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20">
         <DialogHeader>
           <DialogTitle>
             {isEditMode ? "تعديل المشروع" : "إضافة مشروع جديد"}
@@ -169,10 +225,10 @@ const ProjectFormDialog = ({
               </div>
             ) : (
               <Select
-                value={formData.client_id}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, client_id: value })
-                }
+                value={formData.client_id || ""}
+                onValueChange={(value) => {
+                  setFormData((prev) => ({ ...prev, client_id: value }));
+                }}
                 required
               >
                 <SelectTrigger id="client" className="border-white/10 bg-white/5 text-right text-white">
@@ -181,7 +237,7 @@ const ProjectFormDialog = ({
                 <SelectContent className="border-white/10 bg-[#0B1340] text-white">
                   {clients.length > 0 ? (
                     clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
+                      <SelectItem key={client.id} value={String(client.id)}>
                         {client.name}
                       </SelectItem>
                     ))
@@ -259,9 +315,11 @@ const ProjectFormDialog = ({
               <Input
                 id="budget"
                 type="text"
-                value={formData.budget.toLocaleString()}
+                value={formData.budget !== undefined && formData.budget !== null ? 
+                  formData.budget.toString() : 
+                  "0"}
                 onChange={(e) => handleBudgetChange(e.target.value)}
-                placeholder="مثال: 50000"
+                placeholder="مثال: 50000.00"
                 className="border-white/10 bg-white/5 text-right text-white pl-10"
                 required
               />
@@ -293,7 +351,7 @@ const ProjectFormDialog = ({
               variant="ghost"
               onClick={() => onOpenChange(false)}
               type="button"
-              className="border-white/10 hover:bg-white/5"
+              className="border border-white/20 hover:bg-white/10 hover:border-white/30 transition-colors"
             >
               إلغاء
             </Button>

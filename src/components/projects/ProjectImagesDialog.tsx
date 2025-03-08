@@ -174,55 +174,90 @@ const ProjectImagesDialog = ({
 
   const handleSetPrimary = async (imageId: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('Authentication required. Please log in.');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/upload_image/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          image_id: imageId,
-          is_primary: true
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to set primary image');
-      }
-
-      // Update the images list locally
+      setError(null);
+      
+      // تحديث واجهة المستخدم فورًا لتجربة مستخدم أفضل
       setImages(
         images.map((img) => ({
           ...img,
           is_primary: img.id === imageId,
         }))
       );
-      setError(null);
+      
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication required. Please log in.');
+      }
+
+      // استخدام النقطة النهائية الجديدة المخصصة لتعيين الصورة الرئيسية
+      console.log(`Setting image ${imageId} as primary for project ${projectId}`);
+      
+      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/set_primary_image/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          image_id: imageId
+        }),
+      });
+
+      if (!response.ok) {
+        console.warn('Failed to update primary image on server, UI updated only');
+        
+        // في حالة فشل النقطة النهائية الجديدة، المحاولة بالطريقة القديمة
+        try {
+          const fallbackResponse = await fetch(`${API_BASE_URL}/api/projects/${projectId}/upload_image/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              image_id: imageId
+            }),
+          });
+          
+          if (!fallbackResponse.ok) {
+            console.error('Both primary image update approaches failed');
+          } else {
+            console.log('Successfully updated primary image using fallback approach');
+            // تحديث قائمة الصور بالبيانات الجديدة من الخادم
+            await fetchImages();
+          }
+        } catch (fallbackError) {
+          console.error('Error in fallback approach:', fallbackError);
+        }
+      } else {
+        // النقطة النهائية الجديدة نجحت، تحديث الواجهة بالبيانات المستلمة
+        const updatedImages = await response.json();
+        setImages(updatedImages);
+        console.log('Successfully updated primary image');
+      }
     } catch (err) {
-      console.error('Error setting primary image:', err);
+      console.error('Error in handleSetPrimary:', err);
       setError('حدث خطأ أثناء تعيين الصورة الرئيسية');
+      
+      // إعادة تحميل الصور لإظهار الحالة الصحيحة
+      fetchImages();
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-white/10 bg-[#0B1340] text-white sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="border-white/10 bg-[#0B1340] text-white sm:max-w-[800px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>إدارة صور المشروع</DialogTitle>
         </DialogHeader>
 
         {error && (
           <div className="rounded-lg bg-red-500/10 p-4 text-red-500 mb-4">
-            {error}
-          </div>
+          {error}
+        </div>
         )}
 
-        <div className="grid gap-6 md:grid-cols-[1fr_300px]">
+        <div className="grid gap-6 lg:grid-cols-[1fr_300px] md:grid-cols-1">
           <div>
             <h3 className="text-lg font-semibold mb-4">الصور الحالية</h3>
             {loading ? (
@@ -274,13 +309,13 @@ const ProjectImagesDialog = ({
                           <p className="text-xs text-gray-400 mb-auto">
                             تم الرفع: {new Date(image.uploaded_at).toLocaleDateString()}
                           </p>
-                          <div className="flex gap-2 mt-4">
+                          <div className="flex flex-wrap gap-2 mt-4">
                             {!image.is_primary && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleSetPrimary(image.id)}
-                                className="border-white/10 hover:bg-blue-500/20 hover:text-blue-500"
+                                className="border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-colors duration-200"
                               >
                                 <CheckCircle className="h-4 w-4 mr-2" />
                                 تعيين كصورة رئيسية
@@ -290,7 +325,7 @@ const ProjectImagesDialog = ({
                               variant="outline"
                               size="sm"
                               onClick={() => handleDeleteImage(image.id)}
-                              className="border-white/10 hover:bg-red-500/20 hover:text-red-500"
+                              className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors duration-200"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               حذف
@@ -308,7 +343,7 @@ const ProjectImagesDialog = ({
           <div>
             <h3 className="text-lg font-semibold mb-4">رفع صورة جديدة</h3>
             <Card className="border-white/10 bg-white/5">
-              <CardContent className="p-4">
+              <CardContent className="p-4 sm:p-5">
                 <form onSubmit={handleUpload} className="space-y-4">
                   <div className="space-y-2">
                     <Label>اختر صورة</Label>
@@ -373,7 +408,7 @@ const ProjectImagesDialog = ({
 
                   <Button
                     type="submit"
-                    className="w-full bg-[#FF6B00] hover:bg-[#FF8533]"
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white transition-colors duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed mt-2"
                     disabled={!selectedFile || uploading}
                   >
                     {uploading ? (

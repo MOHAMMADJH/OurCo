@@ -37,29 +37,56 @@ export interface ProjectFormData {
 
 // Convert API project format to frontend project format
 const mapApiProjectToProject = (apiProject: any): Project => {
-  // Make sure client is properly formatted
-  const client = typeof apiProject.client === 'object' && apiProject.client !== null
-    ? apiProject.client 
-    : { id: apiProject.client_id || '', name: apiProject.client_name || 'Unknown Client' };
+  console.log("Raw API Project data:", apiProject);
+  
+  // Map client data properly
+  let clientData = null;
+  
+  // Case 1: client_details is available (full client object from API)
+  if (apiProject.client_details) {
+    clientData = {
+      id: String(apiProject.client_details.id),
+      name: apiProject.client_details.name || 'عميل غير معروف'
+    };
+  }
+  // Case 2: client is a full object
+  else if (apiProject.client && typeof apiProject.client === 'object') {
+    clientData = {
+      id: String(apiProject.client.id),
+      name: apiProject.client.name || 'عميل غير معروف'
+    };
+  }
+  // Case 3: client is just an ID
+  else if (apiProject.client) {
+    clientData = {
+      id: String(apiProject.client),
+      name: apiProject.client_name || 'عميل معرف بالرقم'
+    };
+  }
 
-  // Make sure images are properly formatted and include full URLs
-  const images = Array.isArray(apiProject.images)
-    ? apiProject.images.map(img => ({
-        ...img,
-        image: img.image ? (img.image.startsWith('http') ? img.image : `${API_BASE_URL}${img.image.startsWith('/') ? '' : '/'}${img.image}`) : ''
-      }))
-    : [];
+  // Format budget to always be a number with 2 decimal places
+  const budget = typeof apiProject.budget === 'number' 
+    ? parseFloat(apiProject.budget.toFixed(2)) 
+    : (apiProject.budget ? parseFloat(parseFloat(apiProject.budget).toFixed(2)) : 0);
+  
+  console.log("Mapping project from API:", {
+    originalBudget: apiProject.budget,
+    formattedBudget: budget,
+    originalClient: apiProject.client,
+    clientDetails: apiProject.client_details,
+    formattedClient: clientData
+  });
 
   return {
-    id: apiProject.id.toString(),
+    id: apiProject.id,
     title: apiProject.title,
     description: apiProject.description,
-    status: apiProject.status as "active" | "completed" | "pending",
-    client,
-    deadline: apiProject.deadline || new Date().toISOString().split('T')[0],
-    budget: typeof apiProject.budget === 'number' ? apiProject.budget : 0,
-    progress: typeof apiProject.progress === 'number' ? apiProject.progress : 0,
-    images,
+    status: apiProject.status,
+    deadline: apiProject.deadline,
+    budget: budget,
+    progress: apiProject.progress || 0,
+    client: clientData,
+    images: Array.isArray(apiProject.images) ? apiProject.images : [],
     created_at: apiProject.created_at,
     updated_at: apiProject.updated_at,
   };
@@ -122,25 +149,31 @@ const projectService = {
         throw new Error('Authentication required. Please log in.');
       }
 
+      // Format data for the API
+      const formattedData = {
+        title: projectData.title,
+        description: projectData.description,
+        client_id: projectData.client_id ? String(projectData.client_id) : null,
+        status: projectData.status,
+        deadline: projectData.deadline,
+        budget: typeof projectData.budget === 'number' ? parseFloat(projectData.budget.toFixed(2)) : 0,
+        progress: projectData.progress || 0,
+      };
+
+      console.log("Creating project with data:", formattedData);
+
       const response = await fetch(`${API_BASE_URL}/api/projects/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          title: projectData.title,
-          description: projectData.description,
-          client_id: projectData.client_id,
-          status: projectData.status,
-          deadline: projectData.deadline,
-          budget: projectData.budget,
-          progress: projectData.progress || 0,
-        }),
+        body: JSON.stringify(formattedData),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error("API Error Response:", errorData);
         throw new Error(errorData.detail || 'Failed to create project');
       }
 
@@ -160,17 +193,27 @@ const projectService = {
         throw new Error('Authentication required. Please log in.');
       }
 
+      // Format data for the API
+      const formattedData = {
+        ...projectData,
+        client_id: projectData.client_id ? String(projectData.client_id) : undefined,
+        budget: typeof projectData.budget === 'number' ? parseFloat(projectData.budget.toFixed(2)) : undefined,
+      };
+
+      console.log("Sending to API:", formattedData);
+
       const response = await fetch(`${API_BASE_URL}/api/projects/${id}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(projectData),
+        body: JSON.stringify(formattedData),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error("API Error Response:", errorData);
         throw new Error(errorData.detail || 'Failed to update project');
       }
 

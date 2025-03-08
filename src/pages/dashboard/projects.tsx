@@ -87,10 +87,14 @@ const getStatusText = (status: Project["status"]) => {
 };
 
 const formatCurrency = (amount: number) => {
+  if (amount === undefined || amount === null) {
+    return "0.00 ر.س.";
+  }
   return new Intl.NumberFormat('ar-SA', {
     style: 'currency',
     currency: 'SAR',
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 };
 
@@ -381,6 +385,7 @@ const ProjectsPage = () => {
                             className="border-white/10 hover:bg-yellow-500/10 hover:text-yellow-400 hover:border-yellow-500/30 h-9 w-9 p-0 transition-colors"
                             onClick={() => {
                               setSelectedProject(project);
+                              console.log("Editing project with data:", project);
                               setFormDialogOpen(true);
                             }}
                           >
@@ -412,19 +417,27 @@ const ProjectsPage = () => {
       <ProjectFormDialog
         open={formDialogOpen}
         onOpenChange={setFormDialogOpen}
-        onSubmit={selectedProject 
-          ? (data) => handleUpdateProject(selectedProject.id, data) 
-          : handleCreateProject
-        }
+        onSubmit={(data) => {
+          if (selectedProject) {
+            handleUpdateProject(selectedProject.id, data);
+          } else {
+            handleCreateProject(data);
+          }
+        }}
         defaultValues={selectedProject ? {
           title: selectedProject.title,
           description: selectedProject.description,
-          client_id: selectedProject.client?.id || '',
           status: selectedProject.status,
           deadline: selectedProject.deadline,
+          // استخدم client.id إذا كان العميل كائنًا، وإلا استخدم قيمة client مباشرة إذا كانت رقمًا
+          client_id: selectedProject.client ? 
+            (typeof selectedProject.client === 'object' ? String(selectedProject.client.id) : String(selectedProject.client)) 
+            : "",
+          // إضافة العميل بشكله الأصلي لاستخدامه إذا لزم الأمر
+          client: selectedProject.client,
           budget: selectedProject.budget,
-          progress: selectedProject.progress,
-        } : undefined}
+          progress: selectedProject.progress
+        } : {}}
         projectId={selectedProject?.id}
       />
 

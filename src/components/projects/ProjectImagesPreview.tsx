@@ -73,12 +73,12 @@ const ProjectImagesPreview = ({ projectId }: ProjectImagesPreviewProps) => {
           <Button
             type="button"
             variant="outline"
-            className="border-white/10 hover:bg-white/5 w-full"
+            className="border-white/10 hover:bg-gradient-to-r hover:from-[#FF6B00]/20 hover:to-[#FF6B00]/10 w-full font-medium text-base flex items-center justify-center gap-2 transition-all duration-300 ease-in-out py-3 text-black"
             onClick={() => setImagesDialogOpen(true)}
           >
-            <Image className="ml-2 h-4 w-4" />
-            إدارة صور المشروع
-          </Button>
+            <ImagePlus className="h-5 w-5 text-[#FF6B00]" />
+            إضافة صور للمشروع
+          </Button> 
         </div>
       ) : (
         <div className="space-y-4">
@@ -92,11 +92,11 @@ const ProjectImagesPreview = ({ projectId }: ProjectImagesPreviewProps) => {
           <Button
             type="button"
             variant="outline"
-            className="border-white/10 hover:bg-white/5 w-full font-medium text-base flex items-center justify-center gap-2"
+            className="border-white/10 hover:bg-gradient-to-r hover:from-[#FF6B00]/20 hover:to-[#FF6B00]/10 w-full font-medium text-base flex items-center justify-center gap-2 transition-all duration-300 ease-in-out py-3 text-white"
             onClick={() => setImagesDialogOpen(true)}
           >
-            <ImagePlus className="h-5 w-5" />
-            إضافة صور للمشروع
+            <Image className="h-5 w-5 text-[#FF6B00] animate-glow" />
+            إدارة صور المشروع
           </Button>
         </div>
       )}
