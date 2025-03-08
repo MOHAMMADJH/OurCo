@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import clientService, { Client as ApiClient } from "../../lib/client-service";
+import { API_BASE_URL } from "../../lib/constants";
 
 interface Client {
   id: string;
@@ -51,10 +52,12 @@ const ClientsSection = ({ clients: propClients }: ClientsSectionProps) => {
           id: client.id,
           name: client.name,
           description: client.company || `عميل في ${client.location || 'موقع غير محدد'}`,
-          // Use placeholder image based on client type
-          logo: client.type === "company" 
-            ? "/images/clients/business-group.png" 
-            : "/images/clients/individual-client.png",
+          // Use real client image if available, otherwise use a placeholder based on client type
+          logo: client.image 
+            ? client.image 
+            : client.type === "company" 
+              ? "/images/clients/business-group.png" 
+              : "/images/clients/individual-client.png",
           industry: getIndustryFromType(client.type)
         }));
         

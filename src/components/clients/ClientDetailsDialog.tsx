@@ -4,15 +4,16 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Badge } from "../ui/badge";
-import { Card, CardContent } from "../ui/card";
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Building2, Calendar } from "lucide-react";
 import { Client } from "@/lib/client-service";
 import clientService from "@/lib/client-service";
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import projectService, { Project } from "@/lib/project-service";
+import { API_BASE_URL } from "@/lib/constants";
 
 interface ClientDetailsDialogProps {
   open: boolean;
@@ -208,43 +209,70 @@ const ClientDetailsDialog = ({
                 <Badge
                   className={
                     client.status === "active"
-                      ? "bg-green-500/20 text-green-400 p-1.5 px-2.5"
-                      : "bg-gray-500/20 text-gray-400 p-1.5 px-2.5"
+                      ? "bg-green-500/20 text-green-400"
+                      : "bg-gray-500/20 text-gray-400"
                   }
                 >
                   {client.status === "active" ? "نشط" : "غير نشط"}
                 </Badge>
               </div>
 
-              <h2 className="mb-2 text-2xl font-bold text-white">{client.name}</h2>
-              {client.company && (
-                <p className="mb-6 flex items-center gap-2 text-slate-300">
-                  <Building2 className="h-4 w-4 text-slate-400" />
-                  {client.company}
-                </p>
-              )}
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-4">
-                  <div className="rounded-lg border border-white/15 bg-white/10 p-5 shadow-md">
-                    <h3 className="mb-4 text-lg font-semibold text-white">معلومات الاتصال</h3>
-                    <div className="space-y-5">
-                      <div className="flex items-center gap-3">
-                        <Mail className="h-5 w-5 text-[#FF6B00]" />
-                        <span className="text-slate-200">{client.email}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Phone className="h-5 w-5 text-[#FF6B00]" />
-                        <span className="text-slate-200">{client.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-[#FF6B00]" />
-                        <span className="text-slate-200">{client.location}</span>
+              <div className="grid gap-6 md:grid-cols-3 mb-6">
+                <div className="md:col-span-1">
+                  <div className="flex justify-center">
+                    <div className="rounded-lg overflow-hidden border border-white/15 bg-white/10 h-48 w-48">
+                      {client.image ? (
+                        <img 
+                          src={client.image}
+                          alt={client.name}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            // Fallback if image fails to load
+                            (e.target as HTMLImageElement).src = client.type === "company" 
+                              ? "/images/clients/business-group.png" 
+                              : "/images/clients/individual-client.png";
+                          }}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900">
+                          <span className="text-6xl font-bold text-white/40">{client.name.charAt(0)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <h2 className="mb-2 text-2xl font-bold text-white">{client.name}</h2>
+                  {client.company && (
+                    <p className="mb-6 flex items-center gap-2 text-slate-300">
+                      <Building2 className="h-4 w-4 text-slate-400" />
+                      {client.company}
+                    </p>
+                  )}
+                
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-white/15 bg-white/10 p-5 shadow-md">
+                      <h3 className="mb-4 text-lg font-semibold text-white">معلومات الاتصال</h3>
+                      <div className="space-y-5">
+                        <div className="flex items-center gap-3">
+                          <Mail className="h-5 w-5 text-[#FF6B00]" />
+                          <span className="text-slate-200">{client.email}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-5 w-5 text-[#FF6B00]" />
+                          <span className="text-slate-200">{client.phone}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <MapPin className="h-5 w-5 text-[#FF6B00]" />
+                          <span className="text-slate-200">{client.location}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
+              <div className="grid gap-6 md:grid-cols-1">
                 <div className="space-y-4">
                   <div className="rounded-lg border border-white/15 bg-white/10 p-5 shadow-md">
                     <h3 className="mb-4 text-lg font-semibold text-white">ملخص المشاريع</h3>

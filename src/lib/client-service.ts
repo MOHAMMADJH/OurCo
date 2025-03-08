@@ -1,3 +1,4 @@
+import axios from "axios";
 import { API_BASE_URL } from './constants';
 
 export interface Client {
@@ -9,6 +10,7 @@ export interface Client {
   location: string;
   type: "company" | "individual";
   status: "active" | "inactive";
+  image?: string;
   projects_count: number;
   total_value: number;
 }
@@ -24,6 +26,7 @@ const mapApiClientToClient = (apiClient: any): Client => {
     location: apiClient.location,
     type: apiClient.type as "company" | "individual",
     status: apiClient.status as "active" | "inactive",
+    image: apiClient.image || '',
     projects_count: apiClient.projects_count || 0,
     total_value: apiClient.total_value || 0,
   };
@@ -38,16 +41,14 @@ const clientService = {
         throw new Error('Authentication required. Please log in.');
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/clients/`, {
+      const response = await axios.get(`${API_BASE_URL}/api/clients/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      if (!response.ok) {
-        throw new Error('Failed to fetch clients');
-      }
-      const data = await response.json();
-      return (data.results || []).map(mapApiClientToClient);
+      
+      // API returns data in a results array
+      return (response.data.results || []).map(mapApiClientToClient);
     } catch (error) {
       console.error('Error fetching clients:', error);
       throw error;
@@ -62,16 +63,13 @@ const clientService = {
         throw new Error('Authentication required. Please log in.');
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/clients/${id}/`, {
+      const response = await axios.get(`${API_BASE_URL}/api/clients/${id}/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      if (!response.ok) {
-        throw new Error('Failed to fetch client');
-      }
-      const data = await response.json();
-      return mapApiClientToClient(data);
+      
+      return mapApiClientToClient(response.data);
     } catch (error) {
       console.error('Error fetching client:', error);
       throw error;
@@ -79,59 +77,99 @@ const clientService = {
   },
 
   // Create a new client
-  async createClient(client: Omit<Client, 'id' | 'projects_count' | 'total_value'>): Promise<Client> {
+  async createClient(clientData: Omit<Client, "id" | "projects_count" | "total_value"> & { image?: File | null }): Promise<Client> {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error('Authentication required. Please log in.');
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/clients/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(client),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create client');
+      // Check if we have a file using simple property check
+      const hasFile = clientData.image ? true : false;
+      
+      if (hasFile && clientData.image) {
+        const formData = new FormData();
+        
+        // Add all client data to FormData
+        Object.entries(clientData).forEach(([key, value]) => {
+          if (key === 'image' && value) {
+            formData.append('image', value as File);
+          } else if (value !== undefined && value !== null) {
+            formData.append(key, String(value));
+          }
+        });
+        
+        const response = await axios.post(`${API_BASE_URL}/api/clients/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          },
+        });
+        
+        return mapApiClientToClient(response.data);
+      } else {
+        // Regular JSON request if no file
+        // Remove image from JSON payload if it's null
+        const { image, ...clientDataWithoutImage } = clientData;
+        const response = await axios.post(`${API_BASE_URL}/api/clients/`, clientDataWithoutImage, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        return mapApiClientToClient(response.data);
       }
-
-      const data = await response.json();
-      return mapApiClientToClient(data);
     } catch (error) {
-      console.error('Error creating client:', error);
+      console.error("Error creating client:", error);
       throw error;
     }
   },
 
   // Update an existing client
-  async updateClient(id: string, client: Partial<Client>): Promise<Client> {
+  async updateClient(id: string, clientData: Partial<Client> & { image?: File | null }): Promise<Client> {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error('Authentication required. Please log in.');
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/clients/${id}/`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(client),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update client');
+      // Check if we have a file using simple property check
+      const hasFile = clientData.image ? true : false;
+      
+      if (hasFile && clientData.image) {
+        const formData = new FormData();
+        
+        // Add all client data to FormData
+        Object.entries(clientData).forEach(([key, value]) => {
+          if (key === 'image' && value) {
+            formData.append('image', value as File);
+          } else if (value !== undefined && value !== null) {
+            formData.append(key, String(value));
+          }
+        });
+        
+        const response = await axios.patch(`${API_BASE_URL}/api/clients/${id}/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          },
+        });
+        
+        return mapApiClientToClient(response.data);
+      } else {
+        // Regular JSON request if no file
+        // Remove image from JSON payload if it's null
+        const { image, ...clientDataWithoutImage } = clientData;
+        const response = await axios.patch(`${API_BASE_URL}/api/clients/${id}/`, clientDataWithoutImage, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        return mapApiClientToClient(response.data);
       }
-
-      const data = await response.json();
-      return mapApiClientToClient(data);
     } catch (error) {
-      console.error('Error updating client:', error);
+      console.error("Error updating client:", error);
       throw error;
     }
   },
@@ -144,23 +182,20 @@ const clientService = {
         throw new Error('Authentication required. Please log in.');
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/clients/${id}/`, {
-        method: 'DELETE',
+      await axios.delete(`${API_BASE_URL}/api/clients/${id}/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete client');
-      }
+      
+      // Delete operation successful if no error was thrown
     } catch (error) {
       console.error('Error deleting client:', error);
       throw error;
     }
   },
 
-  // Get client projects
+  // Get projects for a client
   async getClientProjects(id: string): Promise<any[]> {
     try {
       const token = localStorage.getItem('accessToken');
@@ -168,17 +203,14 @@ const clientService = {
         throw new Error('Authentication required. Please log in.');
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/clients/${id}/projects/`, {
+      const response = await axios.get(`${API_BASE_URL}/api/clients/${id}/projects/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      if (!response.ok) {
-        throw new Error('Failed to fetch client projects');
-      }
-      const data = await response.json();
+      
       // API returns the array directly, not wrapped in a 'results' property
-      return Array.isArray(data) ? data : [];
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Error fetching client projects:', error);
       throw error;
