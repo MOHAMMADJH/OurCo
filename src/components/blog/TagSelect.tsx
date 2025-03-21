@@ -38,7 +38,7 @@ const TagSelect = ({
     onTagSelect(newSelectedTags);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent<SVGSVGElement, MouseEvent>, tagId: string) => {
+  const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, tagId: string) => {
     e.stopPropagation(); // Prevent tag click event
     if (onDeleteTag) {
       onDeleteTag(tagId);
