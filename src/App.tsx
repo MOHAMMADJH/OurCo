@@ -21,6 +21,10 @@ import DashboardUsersPage from "./pages/dashboard/users";
 import ProfilePage from "./pages/dashboard/profile";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import DebugPage from "./pages/dashboard/debug";
+import NewBlogPost from "./pages/dashboard/blog/new";
+import CommentsPage from "./pages/dashboard/comments";
+import BlogEditorPage from "./pages/dashboard/blog/editor";
+import BlogPostPage from "./pages/blog/[slug]";
 
 const App = () => {
   // Handle tempo routes - نقوم بتعليق هذا الكود إذا كان يسبب مشكلة
@@ -37,6 +41,7 @@ const App = () => {
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
         <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
@@ -48,8 +53,10 @@ const App = () => {
         <Route path="/dashboard/clients" element={<ProtectedRoute element={<DashboardClientsPage />} />} />
         <Route path="/dashboard/users" element={<ProtectedRoute element={<DashboardUsersPage />} requireAdmin={true} />} />
         <Route path="/dashboard/blog" element={<ProtectedRoute element={<DashboardBlogPage />} />} />
-        <Route path="/dashboard/blog/edit" element={<ProtectedRoute element={<BlogEditPage />} />} />
+        <Route path="/dashboard/blog/new" element={<ProtectedRoute element={<NewBlogPost />} />} />
         <Route path="/dashboard/blog/edit/:id" element={<ProtectedRoute element={<BlogEditPage />} />} />
+        <Route path="/dashboard/blog/editor" element={<ProtectedRoute element={<BlogEditorPage />} />} />
+        <Route path="/dashboard/comments" element={<ProtectedRoute element={<CommentsPage />} />} />
         <Route path="/dashboard/messages" element={<ProtectedRoute element={<MessagesPage />} />} />
         <Route path="/dashboard/profile" element={<ProtectedRoute element={<ProfilePage />} />} />
         <Route path="/dashboard/debug" element={<ProtectedRoute element={<DebugPage />} />} />

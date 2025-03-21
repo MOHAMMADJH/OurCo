@@ -24,9 +24,10 @@ interface AuthState {
   }) => Promise<User>;
   logout: () => void;
   setAdminStatus: (isAdmin: boolean) => void;
+  getToken: () => string | null;
 }
 
-export const useAuth = create<AuthState>((set) => ({
+export const useAuth = create<AuthState>((set, get) => ({
   isAuthenticated: !!localStorage.getItem('accessToken'),
   user: JSON.parse(localStorage.getItem('user') || 'null'),
   token: localStorage.getItem('accessToken'),
@@ -74,5 +75,9 @@ export const useAuth = create<AuthState>((set) => ({
       console.log('Admin status updated:', isAdmin);
       console.log('Updated user:', updatedUser);
     }
+  },
+
+  getToken: () => {
+    return get().token || localStorage.getItem('accessToken');
   }
 }));

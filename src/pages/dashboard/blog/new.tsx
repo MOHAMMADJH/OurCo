@@ -1,8 +1,8 @@
 import React from "react";
 import BlogEditor from "./editor";
 
-const BlogEditPage: React.FC = () => {
+const NewBlogPost: React.FC = () => {
   return <BlogEditor />;
 };
 
-export default BlogEditPage;
+export default NewBlogPost;

@@ -1,0 +1,114 @@
+/* Custom styles for Quill editor with RTL support */
+
+/* Container */
+.quill-editor-container {
+  direction: rtl;
+  text-align: right;
+  min-height: 300px;
+  color: white;
+}
+
+/* Editor */
+.quill-editor-container .ql-editor {
+  min-height: 250px;
+  direction: rtl;
+  text-align: right;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-family: 'Cairo', sans-serif;
+}
+
+/* Toolbar */
+.quill-editor-container .ql-toolbar {
+  direction: rtl;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.quill-editor-container .ql-toolbar .ql-formats {
+  margin-right: 0;
+  margin-left: 15px;
+}
+
+/* Buttons and icons */
+.quill-editor-container .ql-snow.ql-toolbar button,
+.quill-editor-container .ql-snow .ql-toolbar button {
+  color: white;
+}
+
+.quill-editor-container .ql-snow.ql-toolbar button:hover,
+.quill-editor-container .ql-snow .ql-toolbar button:hover,
+.quill-editor-container .ql-snow.ql-toolbar button.ql-active,
+.quill-editor-container .ql-snow .ql-toolbar button.ql-active {
+  color: #FF6B00;
+}
+
+.quill-editor-container .ql-snow.ql-toolbar button:hover .ql-fill,
+.quill-editor-container .ql-snow .ql-toolbar button:hover .ql-fill,
+.quill-editor-container .ql-snow.ql-toolbar button.ql-active .ql-fill,
+.quill-editor-container .ql-snow .ql-toolbar button.ql-active .ql-fill {
+  fill: #FF6B00;
+}
+
+.quill-editor-container .ql-snow.ql-toolbar button:hover .ql-stroke,
+.quill-editor-container .ql-snow .ql-toolbar button:hover .ql-stroke,
+.quill-editor-container .ql-snow.ql-toolbar button.ql-active .ql-stroke,
+.quill-editor-container .ql-snow .ql-toolbar button.ql-active .ql-stroke {
+  stroke: #FF6B00;
+}
+
+/* Content styling */
+.quill-editor-container .ql-container {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.quill-editor-container .ql-editor h1,
+.quill-editor-container .ql-editor h2,
+.quill-editor-container .ql-editor h3,
+.quill-editor-container .ql-editor p {
+  color: white;
+}
+
+/* Lists */
+.quill-editor-container .ql-editor ul,
+.quill-editor-container .ql-editor ol {
+  padding-right: 1.5em;
+  padding-left: 0;
+}
+
+/* Fix for list items */
+.quill-editor-container .ql-editor li:not(.ql-direction-rtl)::before {
+  margin-left: 0.5em;
+  margin-right: -1.5em;
+  text-align: left;
+}
+
+/* Link color */
+.quill-editor-container .ql-editor a {
+  color: #FF6B00;
+}
+
+/* SVG colors for icons */
+.quill-editor-container .ql-snow .ql-stroke {
+  stroke: white;
+}
+
+.quill-editor-container .ql-snow .ql-fill {
+  fill: white;
+}
+
+.quill-editor-container .ql-snow .ql-picker {
+  color: white;
+}
+
+.quill-editor-container .ql-snow .ql-picker-options {
+  background-color: #1a1a1a;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Dropdown */
+.quill-editor-container .ql-snow .ql-picker-label {
+  color: white;
+  border-color: rgba(255, 255, 255, 0.1);
+}

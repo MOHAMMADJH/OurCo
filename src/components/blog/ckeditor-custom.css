@@ -1,0 +1,124 @@
+/* CKEditor custom styles for RTL and Arabic support */
+
+/* Container styles */
+.ckeditor-container {
+  min-height: 400px;
+  width: 100%;
+  display: block;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
+/* Set default direction to RTL */
+.ck.ck-editor__editable {
+  direction: rtl !important;
+  text-align: right !important;
+  min-height: 300px !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: white !important;
+  padding: 1rem !important;
+  font-family: 'Cairo', sans-serif !important;
+}
+
+/* RTL specific adjustments */
+.ck.ck-editor__editable[dir="rtl"] {
+  text-align: right !important;
+}
+
+/* Dark theme adjustments */
+.ck.ck-toolbar {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.ck.ck-button {
+  color: white !important;
+}
+
+.ck.ck-button.ck-on {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.ck.ck-button:hover:not(.ck-disabled) {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.ck.ck-content h1, 
+.ck.ck-content h2, 
+.ck.ck-content h3, 
+.ck.ck-content h4, 
+.ck.ck-content h5, 
+.ck.ck-content h6 {
+  color: white !important;
+}
+
+.ck.ck-content p {
+  color: white !important;
+}
+
+.ck.ck-content a {
+  color: #FF6B00 !important;
+}
+
+/* Fix for RTL toolbar items */
+.ck.ck-toolbar > .ck-toolbar__items {
+  flex-direction: row-reverse !important;
+}
+
+/* Fix for RTL dropdown menus */
+.ck.ck-dropdown .ck-dropdown__panel {
+  right: 0 !important;
+  left: auto !important;
+}
+
+/* Fix for RTL list indentation */
+.ck-content ul, .ck-content ol {
+  padding-right: 40px !important;
+  padding-left: 0 !important;
+}
+
+/* Fix for RTL blockquote */
+.ck-content blockquote {
+  border-right: 5px solid #ccc !important;
+  border-left: 0 !important;
+  padding-right: 10px !important;
+  padding-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Fix for RTL text alignment buttons */
+.ck.ck-toolbar .ck-button[data-cke-tooltip-text="Align left"] .ck-icon {
+  transform: scaleX(-1) !important;
+}
+
+.ck.ck-toolbar .ck-button[data-cke-tooltip-text="Align right"] .ck-icon {
+  transform: scaleX(-1) !important;
+}
+
+/* Ensure editor is visible */
+.ck.ck-editor {
+  width: 100% !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1000 !important;
+}
+
+/* Fix for editor container */
+.editor-container {
+  min-height: 400px !important;
+  display: block !important;
+}
+
+/* Fix for CKEditor root element */
+.ck-root {
+  display: block !important;
+  width: 100% !important;
+}
+
+/* Fix for editor content area */
+.ck-editor__main {
+  display: block !important;
+  width: 100% !important;
+}

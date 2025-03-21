@@ -50,7 +50,7 @@ const ClientsSection = ({ clients: propClients }: ClientsSectionProps) => {
         // Map API clients to the format needed by this component
         const mappedClients = fetchedClients.map(client => ({
           id: client.id,
-          name: client.name,
+          name: client.company || client.name,
           description: client.company || `عميل في ${client.location || 'موقع غير محدد'}`,
           // Use real client image if available, otherwise use a placeholder based on client type
           logo: client.image 
@@ -159,7 +159,7 @@ const ClientsSection = ({ clients: propClients }: ClientsSectionProps) => {
                       {client.name}
                     </h3>
                     <span className="inline-block rounded-full bg-[#FF6B00]/20 px-3 py-1 text-sm text-[#FF6B00]">
-                      {client.industry}
+                      {client.industry || (client.description?.includes("عميل في") ? "فردي" : "شركة")}
                     </span>
                   </div>
                 </motion.div>

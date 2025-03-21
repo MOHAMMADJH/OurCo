@@ -242,7 +242,7 @@ const ProjectFormDialog = ({
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="no_clients" disabled>
                       لا يوجد عملاء نشطين
                     </SelectItem>
                   )}
