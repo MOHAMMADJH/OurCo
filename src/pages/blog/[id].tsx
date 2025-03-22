@@ -10,12 +10,18 @@ import blogService from '@/lib/blog-service';
 import { authService } from '@/lib/auth-service';
 
 interface Post {
-  id: number;
+  id: string;
   title: string;
   content: string;
-  author: number;
+  author: {
+    id: string;
+    name: string;
+    avatar?: string;
+  } | number; // Keep number for backward compatibility
   created_at: string;
   updated_at: string;
+  comments?: Comment[];
+  status?: 'draft' | 'published' | 'scheduled' | 'archived';
 }
 
 interface Comment {
@@ -25,6 +31,12 @@ interface Comment {
   content: string;
   created_at: string;
   is_approved: boolean;
+  status?: 'pending' | 'approved' | 'rejected';
+  author?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
 }
 
 const BlogPostPage = () => {
@@ -43,18 +55,27 @@ const BlogPostPage = () => {
         const token = getToken();
         const fetchedPost = await blogService.getPostById(id, token || '');
         // Convert IPost to Post
-        const convertedPost = {
-          ...fetchedPost,
-          id: fetchedPost.id.toString()
+        const convertedPost: Post = {
+          id: fetchedPost.id,
+          title: fetchedPost.title,
+          content: fetchedPost.content || '',
+          author: fetchedPost.author,
+          created_at: fetchedPost.created_at,
+          updated_at: fetchedPost.updated_at || fetchedPost.created_at,
+          status: fetchedPost.status
         };
         setPost(convertedPost);
-        setPostId(fetchedPost.id.toString());
+        setPostId(fetchedPost.id);
         // Convert IComment[] to Comment[]
-        const convertedComments = fetchedPost.comments?.map(comment => ({
-          ...comment,
+        const convertedComments = fetchedPost.comments?.map((comment: any) => ({
+          id: comment.id,
+          content: comment.content,
           name: comment.author?.name || '',
           email: '',
-          is_approved: comment.status === 'approved'
+          created_at: comment.created_at,
+          is_approved: comment.status === 'approved',
+          status: comment.status,
+          author: comment.author
         })) || [];
         setComments(convertedComments);
         setLoading(false);
@@ -74,10 +95,14 @@ const BlogPostPage = () => {
       const newComment = await blogService.addComment(postId, commentData, token || '');
       // Convert IComment to Comment
       const convertedComment: Comment = {
-        ...newComment,
+        id: newComment.id,
+        content: newComment.content,
         name: newComment.author?.name || '',
         email: '',
-        is_approved: newComment.status === 'approved'
+        created_at: newComment.created_at,
+        is_approved: newComment.status === 'approved',
+        status: newComment.status,
+        author: newComment.author
       };
       setComments(prevComments => [...prevComments, convertedComment]);
       return true;
