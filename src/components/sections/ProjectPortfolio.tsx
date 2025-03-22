@@ -13,6 +13,9 @@ interface ProjectPortfolioProps {
   projects?: Project[];
 }
 
+// Define a static default image path to prevent infinite network requests
+const DEFAULT_PROJECT_IMAGE = "/images/project-default.png";
+
 const ProjectPortfolio = ({ projects: propProjects }: ProjectPortfolioProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,9 +41,10 @@ const ProjectPortfolio = ({ projects: propProjects }: ProjectPortfolioProps) => 
           title: project.title,
           description: project.description,
           // Use first image as project cover, or fallback to default image
-          imageUrl: project.images && project.images.length > 0 
+          // Use a static path instead of a relative path to prevent infinite requests
+          imageUrl: project.images && project.images.length > 0 && project.images[0].image
             ? project.images.find(img => img.is_primary)?.image || project.images[0].image
-            : `/images/project-default.png`
+            : DEFAULT_PROJECT_IMAGE
         }));
         
         setProjects(mappedProjects);
@@ -98,12 +102,12 @@ const ProjectPortfolio = ({ projects: propProjects }: ProjectPortfolioProps) => 
               >
                 <div className="mb-4 h-40 w-full overflow-hidden rounded-lg bg-[#0B1340]">
                   <img
-                    src={project.imageUrl || "/images/project-default.png"}
+                    src={project.imageUrl || DEFAULT_PROJECT_IMAGE}
                     alt={project.title}
                     className="h-full w-full object-cover"
                     onError={(e) => {
                       // Fallback if image fails to load
-                      (e.target as HTMLImageElement).src = "/images/project-default.png";
+                      (e.target as HTMLImageElement).src = DEFAULT_PROJECT_IMAGE;
                     }}
                   />
                 </div>
