@@ -7,14 +7,30 @@ import { Button } from '@/components/ui/button';
 import projectService from '@/lib/project-service';
 
 interface Project {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  client: string;
-  start_date: string;
+  client: {
+    id: string;
+    name: string;
+  };
+  status: "active" | "completed" | "pending";
+  deadline: string;
+  budget: number;
+  progress: number;
+  images: Array<{
+    id: string;
+    image: string;
+    caption?: string;
+    is_primary: boolean;
+    uploaded_at: string;
+  }>;
+  created_at: string;
+  updated_at: string;
+  // Additional properties for UI display
+  start_date?: string;
   end_date?: string;
-  status: 'planned' | 'in_progress' | 'completed';
-  technologies: string[];
+  technologies?: string[];
   image_url?: string;
   live_url?: string;
   github_url?: string;
@@ -29,8 +45,17 @@ const ProjectDetailPage = () => {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const projectData = await projectService.getProject(Number(id));
-        setProject(projectData);
+        if (id) {
+          const projectData = await projectService.getProject(id);
+          // Add missing properties required by the interface
+          const enhancedProject = {
+            ...projectData,
+            start_date: projectData.created_at, // Use created_at as start_date
+            technologies: [], // Default empty array for technologies
+            image_url: projectData.images?.find(img => img.is_primary)?.image // Use primary image if available
+          };
+          setProject(enhancedProject);
+        }
       } catch (err) {
         setError('Failed to load project details');
       }
@@ -61,7 +86,7 @@ const ProjectDetailPage = () => {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="text-3xl">{project.title}</CardTitle>
-            <p className="text-lg text-gray-400">{project.client}</p>
+            <p className="text-lg text-gray-400">{typeof project.client === 'string' ? project.client : project.client.name}</p>
           </CardHeader>
           <CardContent>
             <div className="prose prose-invert max-w-none">
@@ -84,7 +109,7 @@ const ProjectDetailPage = () => {
                     </li>
                     <li>
                       <span className="text-gray-400">Start Date:</span>{' '}
-                      {new Date(project.start_date).toLocaleDateString()}
+                      {new Date(project.start_date ?? '').toLocaleDateString()}
                     </li>
                     {project.end_date && (
                       <li>
@@ -98,7 +123,7 @@ const ProjectDetailPage = () => {
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Technologies Used</h3>
                   <div className="flex flex-wrap gap-2">
-                    {project.technologies.map((tech, index) => (
+                    {project.technologies?.map((tech, index) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-gray-800 rounded-full text-sm"
@@ -112,25 +137,26 @@ const ProjectDetailPage = () => {
 
               <div className="flex gap-4">
                 {project.live_url && (
-                  <Button
-                    as="a"
+                  <a
                     href={project.live_url}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    View Live Site
-                  </Button>
+                    <Button>
+                      View Live Site
+                    </Button>
+                  </a>
                 )}
                 {project.github_url && (
-                  <Button
-                    variant="outline"
-                    as="a"
+                  <a
                     href={project.github_url}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    View Source Code
-                  </Button>
+                    <Button variant="outline">
+                      View Source Code
+                    </Button>
+                  </a>
                 )}
               </div>
             </div>

@@ -46,7 +46,7 @@ const ProjectsPage = () => {
           <ProjectDetailsDialog
             open={detailsDialogOpen}
             onOpenChange={setDetailsDialogOpen}
-            project={selectedProject}
+            projectId={selectedProject.id}
           />
         )}
       </main>

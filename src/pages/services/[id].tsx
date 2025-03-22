@@ -68,17 +68,24 @@ const ServiceDetailPage = () => {
     const fetchServiceData = async () => {
       try {
         setLoading(true);
-        const serviceData = await ServiceService.getServiceById(id);
-        setService(serviceData);
-        const testimonialsData = await ServiceService.getTestimonialsByServiceId(id);
-        setTestimonials(testimonialsData);
-        // setFaqs(faqsData);
+        if (id) {
+          const serviceData = await ServiceService.getServiceById(id);
+          // Convert Service to ServiceWithDetails
+          const serviceWithDetails: ServiceWithDetails = {
+            ...serviceData,
+            features: serviceData.features || [] // Ensure features is an array
+          };
+          setService(serviceWithDetails);
+          
+          const testimonialsData = await ServiceService.getTestimonialsByServiceId(id);
+          setTestimonials(testimonialsData);
+          // setFaqs(faqsData);
+        }
       } catch (err) {
         handleApiError(err);
         setError('Failed to load service details'); 
       } finally {
         setLoading(false);
-        setError('Failed to load service details');
       }
     };
 
@@ -252,4 +259,4 @@ const ServiceDetailPage = () => {
   );
 };
 
-export default ServiceDetailPage; 
+export default ServiceDetailPage;

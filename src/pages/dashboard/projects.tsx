@@ -448,6 +448,7 @@ const ProjectsPage = () => {
           // projectId property removed as it's not in the component interface
           projectTitle={selectedProject.title}
           onDelete={() => handleDeleteProject(selectedProject.id)}
+          onConfirm={() => handleDeleteProject(selectedProject.id)}
         />
       )}
 
