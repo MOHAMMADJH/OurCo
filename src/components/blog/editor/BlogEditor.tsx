@@ -189,16 +189,16 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   // Handle status change
-  const handleStatusChange = (status: PostStatus) => {
+  const handleStatusChange = (status: 'draft' | 'published' | 'scheduled' | 'archived') => {
     setPost(prev => ({
       ...prev,
-      status: status === PostStatus.SCHEDULED ? PostStatus.DRAFT : status
+      status: status === 'scheduled' ? 'draft' : status
     }));
   };
 
   // Handle scheduled date change
   const handleScheduledDateChange = (date?: Date) => {
-    setPost(prev => ({ ...prev, published_at: date ? date.toISOString() : undefined }));
+    setPost(prev => ({ ...prev, published_at: date ? date.toISOString() : null }));
   };
 
   // Validate the form
@@ -345,7 +345,6 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
               }
             }}
             className="mb-4 border-white/10 bg-white/5 text-right text-2xl text-white placeholder:text-gray-400"
-            error={errors.title}
           />
           <div className="mb-4 flex gap-2">
             <Input
@@ -364,7 +363,6 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
                 }
               }}
               className="flex-1 border-white/10 bg-white/5 text-right text-white placeholder:text-gray-400"
-              error={errors.slug}
             />
             <Button
               type="button"
@@ -438,33 +436,36 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
       <div className="space-y-6">
         <CategorySelector
           categories={categories}
-          selectedCategory={post.category?.id || ""}
-          onChange={(categoryId) => {
-            const selectedCategory = categories.find(c => c.id === categoryId);
-            setPost({ ...post, category: selectedCategory });
-          }}
-          onAddCategory={addCategory}
-          onDeleteCategory={deleteCategory}
+          selectedCategory={post.category}
+          onCategorySelect={(category) => setPost({ ...post, category })}
+          onCreateCategory={(categoryData) => addCategory({
+            name: categoryData.name,
+            slug: categoryData.slug,
+            description: categoryData.description
+          })}
+          onDeleteCategory={(categoryId) => deleteCategory(categoryId)}
+          allowCreate={true}
           isLoading={categoriesLoading || isCategoryLoading}
         />
         
         <TagSelector
-          availableTags={tags}
-          selectedTags={post.tags?.map(tag => tag.id) || []}
-          onChange={(selectedTagIds) => {
-            const selectedTags = selectedTagIds.map(id => tags.find(t => t.id === id)).filter(Boolean) as any[];
-            setPost({ ...post, tags: selectedTags });
-          }}
-          onAddTag={addTag}
-          onDeleteTag={deleteTag}
+          tags={tags}
+          selectedTags={post.tags || []}
+          onTagsSelect={(tags) => setPost({ ...post, tags })}
+          onCreateTag={(tagData) => addTag({
+            name: tagData.name,
+            slug: tagData.slug
+          })}
+          onDeleteTag={(tagId) => deleteTag(tagId)}
+          allowCreate={true}
           isLoading={tagsLoading || isTagLoading}
         />
         
         <PostScheduler
-          selectedDate={post.published_at ? new Date(post.published_at) : undefined}
-          onDateSelect={(date) => setPost({ ...post, published_at: date?.toISOString() })}
-          status={post.status as PostStatus}
+          onDateSelect={handleScheduledDateChange}
           onStatusChange={handleStatusChange}
+          initialDate={post.published_at ? new Date(post.published_at) : undefined}
+          initialStatus={post.status || 'draft'}
         />
       </div>
     </div>

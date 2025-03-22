@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -8,22 +8,28 @@ import { ar } from 'date-fns/locale';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PostStatus } from "../common/PostStatusBadge";
 
 interface PostSchedulerProps {
   /**
-   * The currently selected date and time
+   * Callback function when date changes
    */
-  value?: Date | null;
+  onDateSelect: (date?: Date) => void;
   
   /**
-   * Callback function when date or time changes
+   * Callback function when status changes
    */
-  onChange: (date: Date | null) => void;
+  onStatusChange: (status: 'draft' | 'published' | 'scheduled' | 'archived') => void;
   
   /**
-   * Minimum allowed date (defaults to today)
+   * Initial date value
    */
-  minDate?: Date;
+  initialDate?: Date;
+  
+  /**
+   * Initial status
+   */
+  initialStatus: 'draft' | 'published' | 'scheduled' | 'archived';
   
   /**
    * CSS class name for styling
@@ -35,28 +41,29 @@ interface PostSchedulerProps {
  * Component for scheduling post publication date and time
  */
 const PostScheduler: React.FC<PostSchedulerProps> = ({
-  value,
-  onChange,
-  minDate = new Date(),
+  onDateSelect,
+  onStatusChange,
+  initialDate,
+  initialStatus,
   className
 }) => {
-  const [date, setDate] = useState<Date | null>(value || null);
+  const [date, setDate] = useState<Date | null>(initialDate || null);
+  const [status, setStatus] = useState<'draft' | 'published' | 'scheduled' | 'archived'>(initialStatus);
   const [timeString, setTimeString] = useState<string>(
-    value ? format(value, 'HH:mm') : '12:00'
+    initialDate ? format(initialDate, 'HH:mm') : '12:00'
   );
 
-  // Update parent component when date or time changes
-  useEffect(() => {
-    if (date) {
-      const [hours, minutes] = timeString.split(':').map(Number);
-      const newDate = new Date(date);
-      newDate.setHours(hours || 0);
-      newDate.setMinutes(minutes || 0);
-      onChange(newDate);
-    } else {
-      onChange(null);
-    }
-  }, [date, timeString, onChange]);
+  // Update date when it changes
+  const handleDateChange = (newDate: Date | null) => {
+    setDate(newDate);
+    onDateSelect(newDate || undefined);
+  };
+
+  // Update status when it changes
+  const handleStatusChange = (newStatus: 'draft' | 'published' | 'scheduled' | 'archived') => {
+    setStatus(newStatus);
+    onStatusChange(newStatus);
+  };
 
   // Handle time input change
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +74,7 @@ const PostScheduler: React.FC<PostSchedulerProps> = ({
   const handleClear = () => {
     setDate(null);
     setTimeString('12:00');
-    onChange(null);
+    onDateSelect(undefined);
   };
 
   return (
@@ -91,9 +98,8 @@ const PostScheduler: React.FC<PostSchedulerProps> = ({
             <Calendar
               mode="single"
               selected={date as any}
-              onSelect={(day) => setDate(day)}
+              onSelect={(day) => handleDateChange(day)}
               initialFocus
-              disabled={(date) => date < minDate}
               locale={ar}
             />
           </PopoverContent>
@@ -120,6 +126,41 @@ const PostScheduler: React.FC<PostSchedulerProps> = ({
             </Button>
           )}
         </div>
+      </div>
+      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+        <PostStatus status={status} />
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => handleStatusChange('draft')}
+          className={cn('h-9', status === 'draft' && 'bg-primary-foreground text-white')}
+        >
+          مسودة
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => handleStatusChange('published')}
+          className={cn('h-9', status === 'published' && 'bg-primary-foreground text-white')}
+        >
+          منشور
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => handleStatusChange('scheduled')}
+          className={cn('h-9', status === 'scheduled' && 'bg-primary-foreground text-white')}
+        >
+          مخطط
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => handleStatusChange('archived')}
+          className={cn('h-9', status === 'archived' && 'bg-primary-foreground text-white')}
+        >
+          مؤرشف
+        </Button>
       </div>
     </div>
   );
