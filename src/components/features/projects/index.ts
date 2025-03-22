@@ -8,12 +8,13 @@ export { default as ProjectPortfolio } from "../../sections/ProjectPortfolio";
 export interface Project {
   id: string;
   title: string;
-  client: string;
+  client: { id: string; name: string; } | string;
   description: string;
   status: "active" | "completed" | "pending";
   deadline: string;
-  budget: string;
+  budget: number | string;
   progress: number;
+  image_url?: string;
 }
 
 // Export project-related utilities

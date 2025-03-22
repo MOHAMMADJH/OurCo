@@ -33,6 +33,7 @@ export interface ProjectFormData {
   deadline: string;
   budget: number;
   progress?: number;
+  client?: { id: string; name: string; } | number | string;
 }
 
 // Convert API project format to frontend project format

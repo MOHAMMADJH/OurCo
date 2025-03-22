@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
-import Navbar from '@/components/navigation/Navbar';
+import Navbar from '@/components/navigation/Navbar'; 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import ServiceService, { Service } from '@/lib/service-service';
 import { authService } from '@/lib/auth-service';
+import { handleApiError } from '@/utils/apiUtils';
+
+
+interface ServiceWithDetails extends Service {
+  price?: number;
+  duration?: string;
+  features: string[];
+  // Add other properties as needed
+}
+
 
 interface Testimonial {
   id: number;
@@ -19,6 +29,7 @@ interface Testimonial {
   created_at: string;
 }
 
+
 interface FAQ {
   id: number;
   question: string;
@@ -27,10 +38,20 @@ interface FAQ {
   order?: number;
 }
 
+
+interface TestimonialCreate {
+  client_name: string;
+  client_title?: string;
+  content: string;
+  rating: number;
+  service: number;
+}
+
+
 const ServiceDetailPage = () => {
   const { id } = useParams();
   const { currentLang, isRTL } = useLanguage();
-  const [service, setService] = useState<Service | null>(null);
+  const [service, setService] = useState<ServiceWithDetails | null>(null);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [newTestimonial, setNewTestimonial] = useState({
@@ -39,19 +60,24 @@ const ServiceDetailPage = () => {
     content: '',
     rating: 5
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchServiceData = async () => {
       try {
-        const serviceData = await ServiceService.getService(Number(id));
+        setLoading(true);
+        const serviceData = await ServiceService.getServiceById(id);
         setService(serviceData);
-        const testimonialsData = await ServiceService.getTestimonials({ service: id });
+        const testimonialsData = await ServiceService.getTestimonialsByServiceId(id);
         setTestimonials(testimonialsData);
-        const faqsData = await ServiceService.getFAQs({ service: id });
-        setFaqs(faqsData);
+        // setFaqs(faqsData);
       } catch (err) {
+        handleApiError(err);
+        setError('Failed to load service details'); 
+      } finally {
+        setLoading(false);
         setError('Failed to load service details');
       }
     };
@@ -61,14 +87,15 @@ const ServiceDetailPage = () => {
     }
   }, [id]);
 
-  const handleTestimonialSubmit = async (e: React.FormEvent) => {
+
+  const handleTestimonialSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!authService.isAuthenticated()) {
       setError('Please login to submit a testimonial');
       return;
     }
-
     setLoading(true);
+    setError('');
     try {
       const testimonial = await ServiceService.createTestimonial({
         ...newTestimonial,
@@ -82,18 +109,20 @@ const ServiceDetailPage = () => {
         rating: 5
       });
     } catch (err) {
-      setError('Failed to submit testimonial');
+      setError('Failed to submit testimonial'); 
+      handleApiError(err);
     } finally {
       setLoading(false);
     }
   };
+
 
   if (!service) {
     return (
       <div className={`min-h-screen bg-gray-950 ${isRTL ? 'rtl' : 'ltr'}`}>
         <Navbar initialLang={currentLang} />
         <main className="pt-20 container mx-auto px-4">
-          <p className="text-center text-gray-400">
+          <p className="text-center text-gray-400 mt-4">
             {error || 'Loading...'}
           </p>
         </main>
@@ -101,14 +130,15 @@ const ServiceDetailPage = () => {
     );
   }
 
+
   return (
     <div className={`min-h-screen bg-gray-950 ${isRTL ? 'rtl' : 'ltr'}`}>
       <Navbar initialLang={currentLang} />
       <main className="pt-20 container mx-auto px-4">
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-3xl">{service.title}</CardTitle>
-            {service.price && (
+            <CardTitle className="text-3xl">{service.name}</CardTitle>
+            {service.price !== undefined && (
               <p className="text-xl font-semibold text-primary">
                 ${service.price} {service.duration && `/ ${service.duration}`}
               </p>
@@ -139,7 +169,7 @@ const ServiceDetailPage = () => {
             <CardContent>
               <div className="space-y-4">
                 {faqs.map((faq) => (
-                  <div key={faq.id} className="border-b border-gray-700 pb-4">
+                  <div key={faq.id} className="border-b border-gray-700 pb-4"> 
                     <h4 className="text-lg font-semibold mb-2">{faq.question}</h4>
                     <p className="text-gray-300">{faq.answer}</p>
                   </div>
@@ -149,6 +179,7 @@ const ServiceDetailPage = () => {
           </Card>
         )}
 
+
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Client Testimonials</CardTitle>
@@ -156,21 +187,21 @@ const ServiceDetailPage = () => {
           <CardContent>
             <form onSubmit={handleTestimonialSubmit} className="mb-8 space-y-4">
               <Input
-                placeholder="Your Name"
-                value={newTestimonial.client_name}
+                placeholder="اسمك"
+                value={newTestimonial.client_name} 
                 onChange={(e) => setNewTestimonial(prev => ({ ...prev, client_name: e.target.value }))}
                 required
               />
               <Input
                 placeholder="Your Title/Company (Optional)"
-                value={newTestimonial.client_title}
+                value={newTestimonial.client_title} 
                 onChange={(e) => setNewTestimonial(prev => ({ ...prev, client_title: e.target.value }))}
               />
               <Textarea
-                placeholder="Your Testimonial"
-                value={newTestimonial.content}
+                placeholder="اكتب شهادتك"
+                value={newTestimonial.content} 
                 onChange={(e) => setNewTestimonial(prev => ({ ...prev, content: e.target.value }))}
-                required
+                required 
               />
               <div>
                 <label className="block text-sm font-medium mb-2">Rating</label>
@@ -178,15 +209,15 @@ const ServiceDetailPage = () => {
                   type="number"
                   min="1"
                   max="5"
-                  value={newTestimonial.rating}
+                  value={newTestimonial.rating} 
                   onChange={(e) => setNewTestimonial(prev => ({ ...prev, rating: Number(e.target.value) }))}
                   required
                 />
               </div>
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <Button type="submit" disabled={loading}>
-                {loading ? 'Submitting...' : 'Submit Testimonial'}
-              </Button>
+                {loading ? 'Submitting...' : 'Submit Testimonial'} 
+              </Button>              
             </form>
 
             <div className="space-y-6">
@@ -221,4 +252,4 @@ const ServiceDetailPage = () => {
   );
 };
 
-export default ServiceDetailPage;
+export default ServiceDetailPage; 
