@@ -127,7 +127,7 @@ const BlogPage: React.FC = () => {
     try {
       setDeleteLoading(true);
       const token = await getToken();
-      await BlogService.deletePost(postToDelete.slug, token);
+      await BlogService.deletePost(postToDelete.slug ?? '', token);
       setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postToDelete.id));
       setDeleteDialogOpen(false);
       setPostToDelete(null);
