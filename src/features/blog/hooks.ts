@@ -248,10 +248,9 @@ export function useTags() {
       setLoading(true);
       try {
         const updatedTag = await BlogService.updateTag(
+          token,
           tagId,
-          tagData.name || '',
-          tagData.slug || '',
-          token
+          tagData
         );
         setTags(prev =>
           prev.map(tag => (tag.id === tagId ? updatedTag as unknown as TagType : tag))
