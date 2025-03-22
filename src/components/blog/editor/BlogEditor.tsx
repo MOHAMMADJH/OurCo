@@ -101,10 +101,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Handle input changes
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
+  const handleInputChange = (name: string, value: string) => {
     setPost(prev => ({ ...prev, [name]: value }));
     
     // Clear error for this field if any
@@ -118,8 +115,8 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   // Handle content changes from rich text editor
-  const handleContentChange = (value: string) => {
-    setPost(prev => ({ ...prev, content: value }));
+  const handleContentChange = (content: string) => {
+    setPost(prev => ({ ...prev, content }));
     
     // Clear error for content if any
     if (errors.content) {
@@ -135,7 +132,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   const handleRemoveTag = (tagId: string) => {
     setPost(prev => ({
       ...prev,
-      tags: prev.tags?.filter(tag => tag.id !== tagId) || []
+      tags: prev.tags ? prev.tags.filter(tag => tag.id !== tagId) : []
     }));
   };
 
@@ -143,7 +140,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   const handleRemoveCategory = (categoryId: string) => {
     setPost(prev => ({
       ...prev,
-      categories: prev.categories?.filter(category => category.id !== categoryId) || []
+      categories: prev.categories ? prev.categories.filter(category => category.id !== categoryId) : []
     }));
   };
 
@@ -234,36 +231,41 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
 
       // Prepare post data for API
       const postData: Partial<IPostCreate> = {
-        title: post.title!,
-        slug: post.slug || generateSlugFromTitle(post.title!),
-        content: post.content!,
+        title: post.title || "",
+        slug: post.slug || generateSlugFromTitle(post.title || ""),
+        content: post.content || "",
         excerpt: post.excerpt || "",
-        status: publishNow ? "published" : "draft",
+        status: (post.status as 'draft' | 'published' | 'scheduled') || "draft",
         tag_ids: post.tags?.map(tag => tag.id) || [],
         category_ids: post.categories?.map(category => category.id) || []
       };
 
       // Handle scheduled publishing
       if (post.published_at) {
-        postData.published_at = new Date(post.published_at).toISOString();
+        postData.published_at = post.published_at instanceof Date ? 
+            post.published_at.toISOString() : 
+            post.published_at;
       }
 
       let savedPost;
       
-      if (isEditMode && post.slug) {
+      if (isEditMode && initialPost?.id) {
         // Update existing post
-        savedPost = await BlogService.updatePost(post.slug, postData, token);
+        savedPost = await BlogService.updatePost(
+          token,
+          initialPost.id,
+          postData
+        );
         toast({
           title: "تم حفظ المقال",
           description: publishNow ? "تم نشر المقال بنجاح" : "تم حفظ المقال كمسودة",
         });
       } else {
         // Create new post
-        savedPost = await BlogService.createPost({
-          ...postData,
-          content: postData.content || "",
-          featured_image: null,
-        } as IPostCreate, token);
+        savedPost = await BlogService.createPost(
+          token,
+          postData as IPostCreate
+        );
         toast({
           title: "تم إنشاء المقال",
           description: publishNow ? "تم نشر المقال الجديد بنجاح" : "تم حفظ المقال الجديد كمسودة",
@@ -401,14 +403,14 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
           <Input
             placeholder="وصف مختصر للمقال"
             value={post.excerpt || ""}
-            onChange={(e) => setPost({ ...post, excerpt: e.target.value })}
+            onChange={(e) => handleInputChange("excerpt", e.target.value)}
             className="border-white/10 bg-white/5 text-right text-white placeholder:text-gray-400"
           />
         </div>
 
         <RichTextEditor 
           value={post.content || ""} 
-          onChange={(content) => handleContentChange(content)}
+          onChange={(content: string) => handleContentChange(content)}
           className="min-h-[300px] rounded border border-white/10 bg-white/5 p-4 text-white/90"
           placeholder="اكتب محتوى المقال هنا..."
         />
@@ -476,9 +478,9 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
         
         <PostScheduler
           initialDate={post.published_at}
-          status={post.status as 'draft' | 'published' | 'scheduled'}
+          initialStatus={post.status || 'draft'}
           onStatusChange={handleStatusChange}
-          onDateChange={handleScheduledDateChange}
+          onDateSelect={handleScheduledDateChange}
         />
         
         {/* ملخص المقال */}
@@ -489,7 +491,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
           <textarea
             id="excerpt"
             value={post.excerpt || ""}
-            onChange={(e) => handleChange(e)}
+            onChange={(e) => handleInputChange("excerpt", e.target.value)}
             placeholder="أدخل ملخصاً موجزاً للمقال..."
             className="h-32 w-full resize-none rounded border border-white/10 bg-white/5 p-3 text-white placeholder:text-gray-400"
           />
