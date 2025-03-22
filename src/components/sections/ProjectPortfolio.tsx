@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import projectService from "../../lib/project-service";
 
+// استيراد الصورة الافتراضية مباشرة
+import DEFAULT_PROJECT_IMAGE_URL from "../../assets/images/project-default.png";
+
 interface Project {
   id: string;
   title: string;
@@ -13,13 +16,14 @@ interface ProjectPortfolioProps {
   projects?: Project[];
 }
 
-// Define a static default image path to prevent infinite network requests
+// تعريف ثابت للصورة الافتراضية
 const DEFAULT_PROJECT_IMAGE = "/images/project-default.png";
 
 const ProjectPortfolio = ({ projects: propProjects }: ProjectPortfolioProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     // If projects are provided as props, use them
@@ -35,13 +39,17 @@ const ProjectPortfolio = ({ projects: propProjects }: ProjectPortfolioProps) => 
         setLoading(true);
         const fetchedProjects = await projectService.getProjects();
         
+        if (fetchedProjects.length === 0) {
+          // إذا كانت المصفوفة فارغة، قد يكون ذلك بسبب مشكلة في المصادقة
+          console.log("No projects returned, possibly due to authentication issues");
+        }
+        
         // Map API projects to the format needed by this component
         const mappedProjects = fetchedProjects.map(project => ({
           id: project.id,
           title: project.title,
           description: project.description,
-          // Use first image as project cover, or fallback to default image
-          // Use a static path instead of a relative path to prevent infinite requests
+          // استخدام صورة المشروع إذا كانت متوفرة، وإلا استخدام الصورة الافتراضية
           imageUrl: project.images && project.images.length > 0 && project.images[0].image
             ? project.images.find(img => img.is_primary)?.image || project.images[0].image
             : DEFAULT_PROJECT_IMAGE
@@ -59,6 +67,19 @@ const ProjectPortfolio = ({ projects: propProjects }: ProjectPortfolioProps) => 
 
     fetchProjects();
   }, [propProjects]);
+
+  // تحديد ما إذا كانت الصورة معطلة لمشروع معين
+  const isImageBroken = (projectId: string) => {
+    return imageErrors[projectId] === true;
+  };
+
+  // معالج أخطاء الصور
+  const handleImageError = (projectId: string) => {
+    setImageErrors(prev => ({
+      ...prev,
+      [projectId]: true
+    }));
+  };
 
   return (
     <section className="relative w-full bg-[#0B1340] px-4 py-16 text-right lg:px-8">
@@ -102,13 +123,10 @@ const ProjectPortfolio = ({ projects: propProjects }: ProjectPortfolioProps) => 
               >
                 <div className="mb-4 h-40 w-full overflow-hidden rounded-lg bg-[#0B1340]">
                   <img
-                    src={project.imageUrl || DEFAULT_PROJECT_IMAGE}
+                    src={isImageBroken(project.id) ? DEFAULT_PROJECT_IMAGE : project.imageUrl || DEFAULT_PROJECT_IMAGE}
                     alt={project.title}
                     className="h-full w-full object-cover"
-                    onError={(e) => {
-                      // Fallback if image fails to load
-                      (e.target as HTMLImageElement).src = DEFAULT_PROJECT_IMAGE;
-                    }}
+                    onError={() => handleImageError(project.id)}
                   />
                 </div>
                 <h3 className="mb-2 text-xl font-bold text-white">
