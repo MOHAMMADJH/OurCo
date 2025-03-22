@@ -6,19 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import serviceService from '@/lib/service-service';
-import authService from '@/lib/auth-service';
-
-interface Service {
-  id: number;
-  title: string;
-  description: string;
-  price?: number;
-  duration?: string;
-  features: string[];
-  category: number;
-  image_url?: string;
-}
+import ServiceService, { Service } from '@/lib/service-service';
+import { authService } from '@/lib/auth-service';
 
 interface Testimonial {
   id: number;
@@ -56,11 +45,11 @@ const ServiceDetailPage = () => {
   useEffect(() => {
     const fetchServiceData = async () => {
       try {
-        const serviceData = await serviceService.getService(Number(id));
+        const serviceData = await ServiceService.getService(Number(id));
         setService(serviceData);
-        const testimonialsData = await serviceService.getTestimonials({ service: id });
+        const testimonialsData = await ServiceService.getTestimonials({ service: id });
         setTestimonials(testimonialsData);
-        const faqsData = await serviceService.getFAQs({ service: id });
+        const faqsData = await ServiceService.getFAQs({ service: id });
         setFaqs(faqsData);
       } catch (err) {
         setError('Failed to load service details');
@@ -81,7 +70,7 @@ const ServiceDetailPage = () => {
 
     setLoading(true);
     try {
-      const testimonial = await serviceService.createTestimonial({
+      const testimonial = await ServiceService.createTestimonial({
         ...newTestimonial,
         service: Number(id)
       });
