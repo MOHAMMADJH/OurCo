@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Save } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import BlogService, { IPost, IPostCreate } from "@/services/blogService";
+import BlogService, { IPost, IPostCreate, ICategory, ITag } from "@/lib/blog-service";
 import { handleApiError } from "@/utils/apiUtils";
 import RichTextEditor from "./RichTextEditor";
 import CategorySelector from "./CategorySelector";
@@ -55,17 +55,16 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
     deleteTag
   } = useTags();
 
-  // Post form state
+  // Initialize post state
   const [post, setPost] = useState<Partial<IPost>>({
     title: "",
-    content: "",
     slug: "",
-    status: "draft",
+    content: "",
     excerpt: "",
-    featured_image: undefined,
-    category: undefined,
-    tags: [],
-    ...(initialPost || {})
+    featured_image: null,
+    status: "draft",
+    categories: [],
+    tags: []
   });
 
   // Generate slug from title
@@ -193,7 +192,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   const handleStatusChange = (status: PostStatus) => {
     setPost(prev => ({
       ...prev,
-      status: status === "scheduled" ? "draft" : status
+      status: status === PostStatus.SCHEDULED ? PostStatus.DRAFT : status
     }));
   };
 
