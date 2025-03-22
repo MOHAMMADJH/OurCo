@@ -8,17 +8,23 @@ import { Plus, X } from "lucide-react";
 interface Category {
   id: string;
   name: string;
-  count: number;
+  slug: string;
+  description?: string;
+  created_at: string;
 }
 
 interface CategoryManagerProps {
   categories: Category[];
+  selectedCategory: string;
+  onCategorySelect: (id: string) => void;
   onAddCategory: (name: string) => void;
   onDeleteCategory: (id: string) => void;
 }
 
 const CategoryManager = ({
   categories = [],
+  selectedCategory,
+  onCategorySelect,
   onAddCategory,
   onDeleteCategory,
 }: CategoryManagerProps) => {
@@ -54,17 +60,18 @@ const CategoryManager = ({
           {categories.map((category) => (
             <Badge
               key={category.id}
-              className="flex items-center gap-2 bg-white/10 text-white hover:bg-white/20"
+              className={`flex cursor-pointer items-center gap-2 ${selectedCategory === category.id ? 'bg-[#FF6B00] text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+              onClick={() => onCategorySelect(category.id)}
             >
               {category.name}
-              <span className="rounded-full bg-white/20 px-2 text-xs">
-                {category.count}
-              </span>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-4 w-4 p-0 hover:bg-transparent hover:text-red-500"
-                onClick={() => onDeleteCategory(category.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteCategory(category.id);
+                }}
               >
                 <X className="h-3 w-3" />
               </Button>

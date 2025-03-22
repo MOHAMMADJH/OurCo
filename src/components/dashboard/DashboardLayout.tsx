@@ -12,6 +12,7 @@ import {
   MessageSquare,
   LogOut,
   FolderKanban,
+  Bug,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Link, useLocation } from "react-router-dom";
@@ -62,6 +63,11 @@ const sidebarItems: SidebarItem[] = [
     icon: <Settings className="h-5 w-5" />,
     label: "الإعدادات",
     href: "/dashboard/settings",
+  },
+  {
+    icon: <Bug className="h-5 w-5" />,
+    label: "التشخيص",
+    href: "/dashboard/debug",
   },
 ];
 

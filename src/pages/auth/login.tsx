@@ -1,25 +1,46 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn } from "lucide-react";
+import { useAuth } from '@/hooks/useAuth';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = React.useState(false);
+  const { login } = useAuth();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
 
-    // Here you would typically handle authentication
-    // For now, we'll just simulate a delay and redirect
-    setTimeout(() => {
+    try {
+      const user = await login(formData);
+      if (user.is_admin) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      setError('Login failed. Please check your credentials.');
+    } finally {
       setIsLoading(false);
-      navigate("/dashboard");
-    }, 1000);
+    }
   };
 
   return (
@@ -44,10 +65,13 @@ const LoginPage = () => {
               </Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="أدخل بريدك الإلكتروني"
                 className="border-white/10 bg-white/5 text-right text-white placeholder:text-gray-400"
                 required
+                value={formData.email}
+                onChange={handleChange}
               />
             </div>
 
@@ -57,12 +81,17 @@ const LoginPage = () => {
               </Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 placeholder="أدخل كلمة المرور"
                 className="border-white/10 bg-white/5 text-right text-white placeholder:text-gray-400"
                 required
+                value={formData.password}
+                onChange={handleChange}
               />
             </div>
+
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
             <div className="flex items-center justify-between">
               <Button
@@ -88,6 +117,16 @@ const LoginPage = () => {
                 </>
               )}
             </Button>
+
+            <div className="text-center">
+              <Button
+                variant="link"
+                className="text-white hover:text-gray-300"
+                onClick={() => navigate('/auth/register')}
+              >
+                ليس لديك حساب؟ سجل الآن
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

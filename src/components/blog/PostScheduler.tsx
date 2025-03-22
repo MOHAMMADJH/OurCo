@@ -23,18 +23,18 @@ const PostScheduler = ({ selectedDate, onDateSelect }: PostSchedulerProps) => {
             selected={selectedDate}
             onSelect={onDateSelect}
             locale={ar}
-            className="rounded-md border border-white/10"
+            className="rounded-md text-white border border-white/10"
           />
 
           {selectedDate && (
-            <div className="text-center text-sm text-gray-400">
+            <div className="text-center text-white text-sm ">
               سيتم نشر المقال في {format(selectedDate, "PPP", { locale: ar })}
             </div>
           )}
 
           <Button
             variant="outline"
-            className="w-full border-white/10 text-white hover:bg-white/10"
+            className="w-full border-white/10 text-black hover:bg-white/10"
             onClick={() => onDateSelect(undefined)}
           >
             إلغاء الجدولة

@@ -1,0 +1,50 @@
+/* Simple CKEditor styling for Arabic support */
+
+/* Container */
+.simple-editor-container {
+  min-height: 300px;
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Main editor */
+.ck-editor__editable {
+  min-height: 300px !important;
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  direction: rtl !important;
+  text-align: right !important;
+  font-family: 'Cairo', sans-serif !important;
+  padding: 1rem !important;
+}
+
+/* Toolbar */
+.ck-toolbar {
+  direction: rtl !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.ck-toolbar .ck-toolbar__items {
+  flex-direction: row-reverse !important;
+}
+
+.ck-toolbar .ck-button {
+  color: white !important;
+}
+
+/* Content styling */
+.ck-content h1, 
+.ck-content h2, 
+.ck-content h3, 
+.ck-content p {
+  color: white !important;
+}
+
+/* Lists */
+.ck-content ul, 
+.ck-content ol {
+  padding-right: 1.5rem !important;
+  padding-left: 0 !important;
+}
