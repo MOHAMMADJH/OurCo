@@ -14,6 +14,7 @@ interface ProjectDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  onDelete?: () => void; // Added for compatibility with projects.tsx
   projectTitle: string;
 }
 
@@ -21,8 +22,17 @@ const ProjectDeleteDialog = ({
   open,
   onOpenChange,
   onConfirm,
+  onDelete,
   projectTitle,
 }: ProjectDeleteDialogProps) => {
+  // Use onDelete if provided, otherwise use onConfirm
+  const handleConfirm = () => {
+    if (onDelete) {
+      onDelete();
+    } else {
+      onConfirm();
+    }
+  };
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="border-white/10 bg-[#0B1340] text-white">
@@ -39,7 +49,7 @@ const ProjectDeleteDialog = ({
           </AlertDialogCancel>
           <AlertDialogAction
             className="bg-red-500 hover:bg-red-600"
-            onClick={onConfirm}
+            onClick={handleConfirm}
           >
             حذف
           </AlertDialogAction>

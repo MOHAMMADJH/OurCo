@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import ProjectFormDialog, {
-  ProjectFormData,
-} from "@/components/projects/ProjectFormDialog";
+import ProjectFormDialog from "@/components/projects/ProjectFormDialog";
+import { ProjectFormData } from "@/lib/project-service";
 import ProjectDeleteDialog from "@/components/projects/ProjectDeleteDialog";
 import ProjectDetailsDialog from "@/components/projects/ProjectDetailsDialog";
 import ProjectImagesDialog from "@/components/projects/ProjectImagesDialog";
@@ -457,7 +456,7 @@ const ProjectsPage = () => {
         <ProjectDetailsDialog
           open={detailsDialogOpen}
           onOpenChange={setDetailsDialogOpen}
-          // projectId property removed as it's not in the component interface
+          projectId={selectedProject?.id || ''}
         />
       )}
 
@@ -466,7 +465,7 @@ const ProjectsPage = () => {
         <ProjectImagesDialog
           open={imagesDialogOpen}
           onOpenChange={setImagesDialogOpen}
-          // projectId property removed as it's not in the component interface
+          projectId={selectedProject?.id || ''}
         />
       )}
 
@@ -475,9 +474,9 @@ const ProjectsPage = () => {
         <ProjectProgressDialog
           open={progressDialogOpen}
           onOpenChange={setProgressDialogOpen}
-          // projectId property removed as it's not in the component interface
           currentProgress={selectedProject.progress}
           onProgressUpdated={fetchProjects}
+          projectId={selectedProject?.id || ''}
         />
       )}
     </DashboardLayout>

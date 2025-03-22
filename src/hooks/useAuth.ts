@@ -8,6 +8,7 @@ interface User {
   last_name: string;
   is_admin: boolean;
   role: string;
+  name?: string; // Added for compatibility with debug.tsx
 }
 
 interface AuthState {
@@ -43,7 +44,8 @@ export const useAuth = create<AuthState>((set, get) => ({
       first_name: authUser.first_name || '',
       last_name: authUser.last_name || '',
       is_admin: authUser.is_admin,
-      role: authUser.is_admin ? 'admin' : 'user'
+      role: authUser.is_admin ? 'admin' : 'user',
+      name: `${authUser.first_name || ''} ${authUser.last_name || ''}`.trim() // Add name property
     };
 
     localStorage.setItem('accessToken', token);
@@ -64,7 +66,8 @@ export const useAuth = create<AuthState>((set, get) => ({
       first_name: authUser.first_name || '',
       last_name: authUser.last_name || '',
       is_admin: authUser.is_admin,
-      role: authUser.is_admin ? 'admin' : 'user'
+      role: authUser.is_admin ? 'admin' : 'user',
+      name: `${authUser.first_name || ''} ${authUser.last_name || ''}`.trim() // Add name property
     };
 
     localStorage.setItem('accessToken', token);

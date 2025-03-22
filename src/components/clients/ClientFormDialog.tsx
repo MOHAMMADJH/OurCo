@@ -36,7 +36,7 @@ interface ClientFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: ClientFormData) => void;
-  defaultValues?: Partial<ClientFormData>;
+  defaultValues?: Partial<ClientFormData> | Client;
 }
 
 const ClientFormDialog = ({

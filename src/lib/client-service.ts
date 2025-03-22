@@ -11,6 +11,7 @@ export interface Client {
   type: "company" | "individual";
   status: "active" | "inactive";
   image?: string;
+  imageUrl?: string; // Added for compatibility with ClientFormData
   projects_count: number;
   total_value: number;
 }

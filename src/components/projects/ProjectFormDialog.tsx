@@ -20,6 +20,7 @@ import {
 import { Slider } from "../ui/slider";
 import clientService, { Client } from "@/lib/client-service";
 import { X, Loader2, DollarSign, AlertCircle } from "lucide-react";
+// Import ProjectFormData from project-service instead of exporting it here
 import { ProjectFormData } from "@/lib/project-service";
 import ProjectImagesPreview from "./ProjectImagesPreview";
 

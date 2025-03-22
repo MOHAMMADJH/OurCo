@@ -182,9 +182,9 @@ const MessagesPage = () => {
       />
 
       <div className="p-6">
-        <Tabs defaultValue="all" className="w-full">
+        <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedTab}>
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <TabsList className="bg-white/5" onValueChange={setSelectedTab}>
+            <TabsList className="bg-white/5">
               <TabsTrigger value="all" className="text-white">
                 الكل
               </TabsTrigger>
