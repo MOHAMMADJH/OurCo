@@ -10,16 +10,17 @@ export interface CategoryType {
   name: string;
   slug: string;
   description: string;
-  created_at?: string; 
-  updated_at?: string;
+  created_at: string; // Not optional to match ICategory
+  updated_at: string; // Not optional to match ICategory
+  posts_count?: number; // Added for compatibility with ICategory
 }
 
 export interface TagType {
   id: string;
   name: string;
   slug: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string; // Not optional to match ITag
+  updated_at: string; // Not optional to match ITag
 }
 
 /**

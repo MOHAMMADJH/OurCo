@@ -124,14 +124,8 @@ const ProjectProgressDialog = ({
                 step={1}
                 defaultValue={[currentProgress]}
                 className="[&_[role=slider]]:bg-[#FF6B00] [&_[role=slider]]:h-5 [&_[role=slider]]:w-5"
-                showSecondaryTrackColors
-                secondaryTrackColors={
-                  progress < 33
-                    ? ["bg-red-500"]
-                    : progress < 66
-                    ? ["bg-yellow-500"]
-                    : ["bg-green-500"]
-                }
+                // Custom styling can be applied through className or other supported props
+                // The custom properties have been removed as they don't exist on the component
               />
             </div>
             <div className="flex justify-between text-sm text-gray-400">

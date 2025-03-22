@@ -3,11 +3,12 @@ import axios from 'axios';
 const API_BASE_URL = 'https://mohjaspy.pythonanywhere.com';
 
 interface User {
-  id: number;
+  id: number | string; // Allow both number and string for compatibility
   email: string;
   first_name?: string;
   last_name?: string;
   is_admin: boolean;
+  role?: string; // Added for compatibility with useAuth.ts
 }
 
 interface LoginCredentials {

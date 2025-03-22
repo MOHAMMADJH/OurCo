@@ -40,7 +40,7 @@ export interface ICategory {
   id: string;
   name: string;
   slug: string;
-  description?: string;
+  description: string; // Changed from optional to required for compatibility with CategoryType
   created_at: string;
   updated_at: string;
   posts_count?: number;

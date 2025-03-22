@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import blogService from '@/lib/blog-service';
-import authService from '@/lib/auth-service';
+import { authService } from '@/lib/auth-service';
 
 interface Post {
   id: number;
@@ -38,19 +38,57 @@ const BlogPostPage = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const postData = await blogService.getPost(Number(id));
-        setPost(postData);
-        const commentsData = await blogService.getComments(Number(id));
-        setComments(commentsData);
-      } catch (err) {
-        setError('Failed to load blog post');
+        const fetchedPost = await blogService.getPostById(id, token || '');
+        // Convert IPost to Post
+        const convertedPost = {
+          ...fetchedPost,
+          id: fetchedPost.id.toString()
+        };
+        setPost(convertedPost);
+        setPostId(fetchedPost.id.toString());
+        // Convert IComment[] to Comment[]
+        const convertedComments = fetchedPost.comments?.map(comment => ({
+          ...comment,
+          name: comment.author?.name || '',
+          email: '',
+          is_approved: comment.status === 'approved'
+        })) || [];
+        setComments(convertedComments);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching post:', error);
+        setError('Failed to load post');
+        setLoading(false);
       }
     };
 
-    if (id) {
-      fetchPost();
+    fetchPost();
+  }, [id, token]);
+
+  const [postId, setPostId] = useState('');
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    setToken(authService.getToken());
+  }, []);
+
+  const addComment = async (commentData: any) => {
+    try {
+      const newComment = await blogService.addComment(postId, commentData, token || '');
+      // Convert IComment to Comment
+      const convertedComment: Comment = {
+        ...newComment,
+        name: newComment.author?.name || '',
+        email: '',
+        is_approved: newComment.status === 'approved'
+      };
+      setComments(prevComments => [...prevComments, convertedComment]);
+      return true;
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      return false;
     }
-  }, [id]);
+  };
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,12 +99,14 @@ const BlogPostPage = () => {
 
     setLoading(true);
     try {
-      const comment = await blogService.createComment({
-        post: Number(id),
+      const success = await addComment({
         content: newComment
       });
-      setComments([...comments, comment]);
-      setNewComment('');
+      if (success) {
+        setNewComment('');
+      } else {
+        setError('Failed to post comment');
+      }
     } catch (err) {
       setError('Failed to post comment');
     } finally {

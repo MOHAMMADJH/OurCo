@@ -33,7 +33,7 @@ export interface ProjectFormData {
   deadline: string;
   budget: number;
   progress?: number;
-  client?: { id: string; name: string; } | number | string;
+  client?: { id: string; name: string; } | string;
 }
 
 // Convert API project format to frontend project format
@@ -41,7 +41,11 @@ const mapApiProjectToProject = (apiProject: any): Project => {
   console.log("Raw API Project data:", apiProject);
   
   // Map client data properly
-  let clientData = null;
+  // Default client data to ensure it's never null
+  let clientData = {
+    id: '0',
+    name: 'عميل غير معروف'
+  };
   
   // Case 1: client_details is available (full client object from API)
   if (apiProject.client_details) {

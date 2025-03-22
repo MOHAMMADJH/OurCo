@@ -33,8 +33,18 @@ export const useAuth = create<AuthState>((set, get) => ({
   token: localStorage.getItem('accessToken'),
 
   login: async (credentials) => {
-    const user = await authService.login(credentials);
-    const token = authService.getToken();
+    const authUser = await authService.login(credentials);
+    const token = authService.getToken() || '';
+
+    // Convert auth service user to our User type
+    const user: User = {
+      id: String(authUser.id),
+      email: authUser.email,
+      first_name: authUser.first_name || '',
+      last_name: authUser.last_name || '',
+      is_admin: authUser.is_admin,
+      role: authUser.is_admin ? 'admin' : 'user'
+    };
 
     localStorage.setItem('accessToken', token);
     localStorage.setItem('user', JSON.stringify(user));
@@ -44,8 +54,18 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
 
   register: async (userData) => {
-    const user = await authService.register(userData);
-    const token = authService.getToken();
+    const authUser = await authService.register(userData);
+    const token = authService.getToken() || '';
+
+    // Convert auth service user to our User type
+    const user: User = {
+      id: String(authUser.id),
+      email: authUser.email,
+      first_name: authUser.first_name || '',
+      last_name: authUser.last_name || '',
+      is_admin: authUser.is_admin,
+      role: authUser.is_admin ? 'admin' : 'user'
+    };
 
     localStorage.setItem('accessToken', token);
     localStorage.setItem('user', JSON.stringify(user));
