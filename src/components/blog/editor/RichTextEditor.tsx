@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, memo } from "react";
 import { Card } from "@/components/ui/card";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface RichTextEditorProps {
   /**

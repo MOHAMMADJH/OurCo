@@ -90,8 +90,8 @@ const PostScheduler: React.FC<PostSchedulerProps> = ({
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="single"
-              selected={date}
-              onSelect={setDate}
+              selected={date as any}
+              onSelect={(day) => setDate(day)}
               initialFocus
               disabled={(date) => date < minDate}
               locale={ar}
