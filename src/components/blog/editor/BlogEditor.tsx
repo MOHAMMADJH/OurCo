@@ -12,6 +12,9 @@ import CategorySelector from "./CategorySelector";
 import TagSelector from "./TagSelector";
 import PostScheduler from "./PostScheduler";
 import { CategoryType, TagType, useCategories, useTags } from "@/features/blog/hooks";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 
 // Define interfaces here
 interface IPost {
@@ -129,7 +132,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   // Remove/update tags from post
-  const handleRemoveTag = (tagId: string) => {
+  const handleRemoveTag = async (tagId: string): Promise<void> => {
     setPost(prev => ({
       ...prev,
       tags: prev.tags ? prev.tags.filter(tag => tag.id !== tagId) : []
@@ -408,11 +411,13 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
           />
         </div>
 
+        <Label htmlFor="content" className="mb-2 block text-white">
+          محتوى المقال <span className="text-red-500">*</span>
+        </Label>
         <RichTextEditor 
           value={post.content || ""} 
           onChange={(content: string) => handleContentChange(content)}
-          className="min-h-[300px] rounded border border-white/10 bg-white/5 p-4 text-white/90"
-          placeholder="اكتب محتوى المقال هنا..."
+          error={errors.content}
         />
 
         <div className="flex gap-4">
@@ -460,34 +465,85 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
           onCreateCategory={addCategory}
         />
         
+        <Label className="mb-2 block text-white">التصنيفات</Label>
+        <div className="mb-4 flex flex-wrap gap-2 rounded border border-white/10 bg-white/5 p-2">
+          {post.categories && post.categories.length > 0 ? (
+            post.categories.map(category => (
+              <Badge 
+                key={category.id} 
+                variant="secondary" 
+                className="flex items-center gap-1 px-3 py-1.5 text-sm"
+              >
+                {category.name}
+                <X 
+                  className="ml-1 h-3 w-3 cursor-pointer opacity-70 hover:opacity-100" 
+                  onClick={() => handleRemoveCategory(category.id)}
+                />
+              </Badge>
+            ))
+          ) : (
+            <p className="text-gray-400">لم يتم إضافة أي تصنيفات</p>
+          )}
+        </div>
+        
         <TagSelector 
-          tags={tags}
-          selectedTags={post.tags || []}
-          onSelectTag={(tag: TagType) => {
-            const exists = post.tags?.some(t => t.id === tag.id) || false;
-            if (!exists) {
+          availableTags={tags}
+          selectedTags={post.tags?.map(tag => tag.id) || []}
+          onChange={(selectedTagIds: string[]) => {
+            const selectedTags = tags.filter(tag => selectedTagIds.includes(tag.id));
+            setPost(prev => ({
+              ...prev,
+              tags: selectedTags
+            }));
+          }}
+          onAddTag={async (name: string) => {
+            const newTag = await addTag({ name });
+            if (newTag) {
               setPost(prev => ({
                 ...prev,
-                tags: [...(prev.tags || []), tag]
+                tags: [...(prev.tags || []), newTag]
               }));
             }
           }}
-          onRemoveTag={handleRemoveTag}
-          onCreateTag={addTag}
+          onDeleteTag={handleRemoveTag}
+          isLoading={tagsLoading}
         />
         
+        <Label className="mb-2 block text-white">الوسوم</Label>
+        <div className="mb-4 flex flex-wrap gap-2 rounded border border-white/10 bg-white/5 p-2">
+          {post.tags && post.tags.length > 0 ? (
+            post.tags.map(tag => (
+              <Badge 
+                key={tag.id} 
+                variant="outline" 
+                className="flex items-center gap-1 px-3 py-1.5 text-sm"
+              >
+                {tag.name}
+                <X 
+                  className="ml-1 h-3 w-3 cursor-pointer opacity-70 hover:opacity-100" 
+                  onClick={() => handleRemoveTag(tag.id)}
+                />
+              </Badge>
+            ))
+          ) : (
+            <p className="text-gray-400">لم يتم إضافة أي وسوم</p>
+          )}
+        </div>
+        
+        <h3 className="mb-2 text-lg font-medium text-white">خيارات النشر</h3>
+        
         <PostScheduler
-          initialDate={post.published_at}
-          initialStatus={post.status || 'draft'}
+          initialDate={post.published_at instanceof Date ? post.published_at : post.published_at ? new Date(post.published_at) : null}
+          initialStatus={post.status as 'draft' | 'published' | 'scheduled' | 'archived' || 'draft'}
           onStatusChange={handleStatusChange}
           onDateSelect={handleScheduledDateChange}
         />
         
         {/* ملخص المقال */}
         <div className="mb-6">
-          <label htmlFor="excerpt" className="mb-2 block text-white">
+          <Label htmlFor="excerpt" className="mb-2 block text-white">
             ملخص المقال
-          </label>
+          </Label>
           <textarea
             id="excerpt"
             value={post.excerpt || ""}
@@ -502,9 +558,9 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
 
         {/* تحميل صورة مميزة - سيتم تنفيذها لاحقاً */}
         <div className="mb-6">
-          <label className="mb-2 block text-white">
+          <Label className="mb-2 block text-white">
             الصورة المميزة
-          </label>
+          </Label>
           <div className="flex h-32 w-full items-center justify-center rounded border border-dashed border-white/10 bg-white/5 p-3">
             <p className="text-center text-gray-400">
               {post.featured_image ? "تم تحميل الصورة" : "ميزة تحميل الصورة قيد التطوير..."}
