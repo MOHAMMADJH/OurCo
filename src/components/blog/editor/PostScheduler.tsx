@@ -8,13 +8,12 @@ import { ar } from 'date-fns/locale';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PostStatus } from "../common/PostStatusBadge";
 
 interface PostSchedulerProps {
   /**
    * Callback function when date changes
    */
-  onDateSelect: (date?: Date) => void;
+  onDateSelect: (date: Date | null) => void;
   
   /**
    * Callback function when status changes
@@ -24,7 +23,7 @@ interface PostSchedulerProps {
   /**
    * Initial date value
    */
-  initialDate?: Date;
+  initialDate?: Date | null;
   
   /**
    * Initial status
@@ -56,7 +55,7 @@ const PostScheduler: React.FC<PostSchedulerProps> = ({
   // Update date when it changes
   const handleDateChange = (newDate: Date | null) => {
     setDate(newDate);
-    onDateSelect(newDate || undefined);
+    onDateSelect(newDate);
   };
 
   // Update status when it changes
@@ -74,7 +73,7 @@ const PostScheduler: React.FC<PostSchedulerProps> = ({
   const handleClear = () => {
     setDate(null);
     setTimeString('12:00');
-    onDateSelect(undefined);
+    onDateSelect(null);
   };
 
   return (
@@ -98,7 +97,7 @@ const PostScheduler: React.FC<PostSchedulerProps> = ({
             <Calendar
               mode="single"
               selected={date as any}
-              onSelect={(day) => handleDateChange(day)}
+              onSelect={(date) => handleDateChange(date || null)}
               initialFocus
               locale={ar}
             />
@@ -128,7 +127,15 @@ const PostScheduler: React.FC<PostSchedulerProps> = ({
         </div>
       </div>
       <div className="flex items-center space-x-2 rtl:space-x-reverse">
-        <PostStatus status={status} />
+        <div className="w-3 h-3 rounded-full" 
+          style={{ 
+            backgroundColor: 
+              status === 'draft' ? 'gray' : 
+              status === 'published' ? 'green' : 
+              status === 'scheduled' ? 'blue' : 
+              status === 'archived' ? 'red' : 'gray' 
+          }} 
+        />
         <Button 
           variant="ghost" 
           size="sm" 

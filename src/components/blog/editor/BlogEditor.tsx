@@ -177,6 +177,22 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
     }
   };
 
+  // Remove/update tags from post
+  const handleRemoveTag = (tagId: string) => {
+    setPost(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag.id !== tagId)
+    }));
+  };
+
+  // Remove/update category from post
+  const handleRemoveCategory = (categoryId: string) => {
+    setPost(prev => ({
+      ...prev,
+      categories: prev.categories.filter(category => category.id !== categoryId)
+    }));
+  };
+
   // Handle category selection
   const handleCategoryChange = (categoryId: string) => {
     const selectedCategory = categories.find(c => c.id === categoryId);
@@ -197,7 +213,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   // Handle scheduled date change
-  const handleScheduledDateChange = (date?: Date) => {
+  const handleScheduledDateChange = (date: Date | null) => {
     setPost(prev => ({ ...prev, published_at: date ? date.toISOString() : null }));
   };
 
@@ -434,37 +450,42 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
 
       {/* Sidebar */}
       <div className="space-y-6">
-        <CategorySelector
-          categories={categories}
-          selectedCategory={post.category}
-          onCategorySelect={(category) => setPost({ ...post, category })}
-          onCreateCategory={(categoryData) => addCategory({
-            name: categoryData.name,
-            slug: categoryData.slug,
-            description: categoryData.description
-          })}
-          onDeleteCategory={(categoryId) => deleteCategory(categoryId)}
-          allowCreate={true}
-          isLoading={categoriesLoading || isCategoryLoading}
+        <CategorySelector 
+          categories={categories} 
+          selectedCategories={post.categories} 
+          onSelectCategory={(category) => {
+            const exists = post.categories.some(c => c.id === category.id);
+            if (!exists) {
+              setPost(prev => ({
+                ...prev,
+                categories: [...prev.categories, category]
+              }));
+            }
+          }}
+          onRemoveCategory={handleRemoveCategory}
+          onCreateCategory={addCategory}
         />
         
-        <TagSelector
+        <TagSelector 
           tags={tags}
-          selectedTags={post.tags || []}
-          onTagsSelect={(tags) => setPost({ ...post, tags })}
-          onCreateTag={(tagData) => addTag({
-            name: tagData.name,
-            slug: tagData.slug
-          })}
-          onDeleteTag={(tagId) => deleteTag(tagId)}
-          allowCreate={true}
-          isLoading={tagsLoading || isTagLoading}
+          selectedTags={post.tags}
+          onSelectTag={(tag) => {
+            const exists = post.tags.some(t => t.id === tag.id);
+            if (!exists) {
+              setPost(prev => ({
+                ...prev,
+                tags: [...prev.tags, tag]
+              }));
+            }
+          }}
+          onRemoveTag={handleRemoveTag}
+          onCreateTag={addTag}
         />
         
         <PostScheduler
           onDateSelect={handleScheduledDateChange}
           onStatusChange={handleStatusChange}
-          initialDate={post.published_at ? new Date(post.published_at) : undefined}
+          initialDate={post.published_at ? new Date(post.published_at) : null}
           initialStatus={post.status || 'draft'}
         />
       </div>
