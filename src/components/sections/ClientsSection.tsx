@@ -15,6 +15,11 @@ interface ClientsSectionProps {
   clients?: Client[];
 }
 
+// Define static default image paths to prevent infinite network requests
+const DEFAULT_COMPANY_IMAGE = "/images/clients/business-group.png";
+const DEFAULT_INDIVIDUAL_IMAGE = "/images/clients/individual-client.png";
+const DEFAULT_CLIENT_IMAGE = "/images/default-client.png";
+
 const ClientsSection = ({ clients: propClients }: ClientsSectionProps) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,12 +57,12 @@ const ClientsSection = ({ clients: propClients }: ClientsSectionProps) => {
           id: client.id,
           name: client.company || client.name,
           description: client.company || `عميل في ${client.location || 'موقع غير محدد'}`,
-          // Use real client image if available, otherwise use a placeholder based on client type
+          // Use real client image if available, otherwise use a static placeholder based on client type
           logo: client.image 
             ? client.image 
             : client.type === "company" 
-              ? "/images/clients/business-group.png" 
-              : "/images/clients/individual-client.png",
+              ? DEFAULT_COMPANY_IMAGE 
+              : DEFAULT_INDIVIDUAL_IMAGE,
           industry: getIndustryFromType(client.type)
         }));
         
@@ -145,12 +150,12 @@ const ClientsSection = ({ clients: propClients }: ClientsSectionProps) => {
                 >
                   <div className="mb-4 flex h-36 w-full items-center justify-center overflow-hidden rounded-lg bg-white">
                     <img
-                      src={client.logo || "/images/clients/default-client.png"}
+                      src={client.logo || DEFAULT_CLIENT_IMAGE}
                       alt={client.name}
                       className="h-24 w-auto max-w-full object-contain transition-transform duration-300 group-hover:scale-110"
                       onError={(e) => {
                         // Fallback if image fails to load
-                        (e.target as HTMLImageElement).src = "/images/clients/default-client.png";
+                        (e.target as HTMLImageElement).src = DEFAULT_CLIENT_IMAGE;
                       }}
                     />
                   </div>
