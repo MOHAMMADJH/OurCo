@@ -53,7 +53,15 @@ const clientService = {
       return (response.data.results || []).map(mapApiClientToClient);
     } catch (error) {
       console.error('Error fetching clients:', error);
-      throw error;
+      
+      // Check if error is due to authentication (401)
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        console.warn('Unauthenticated access to clients, showing public data only');
+        return [];
+      }
+      
+      // Return empty array instead of throwing error for public access
+      return [];
     }
   },
 
