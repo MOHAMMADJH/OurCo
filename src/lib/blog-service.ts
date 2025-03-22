@@ -82,7 +82,7 @@ class BlogService {
   }
 
   // Posts
-  async getPosts(token: string, params: Record<string, any> = {}): Promise<IPost[]> {
+  async getPosts(token?: string, params: Record<string, any> = {}): Promise<IPost[]> {
     const queryParams = new URLSearchParams();
     
     Object.entries(params).forEach(([key, value]) => {
@@ -97,11 +97,35 @@ class BlogService {
 
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
     
-    const response = await axios.get(`${this.baseUrl}/posts${query}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    
-    return response.data;
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+      
+      // Add authorization header only if token exists
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await axios.get(`${this.baseUrl}/posts${query}`, {
+        headers,
+        withCredentials: true
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching blog posts:', error);
+      
+      // Check if error is due to authentication (401)
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        console.warn('Unauthenticated access to blog posts, showing public data only');
+        return [];
+      }
+      
+      // Return empty array instead of throwing error for public access
+      return [];
+    }
   }
 
   async getPost(token: string, id: string): Promise<IPost> {

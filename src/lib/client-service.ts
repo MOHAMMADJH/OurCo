@@ -48,22 +48,29 @@ const clientService = {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await axios.get(`${API_BASE_URL}/api/clients/`, {
+      // Try using fetch instead of axios to match the project service approach
+      const response = await fetch(`${API_BASE_URL}/api/clients/`, {
+        method: 'GET',
         headers,
-        withCredentials: true
+        mode: 'cors',
+        credentials: 'include'
       });
       
-      // API returns data in a results array
-      return (response.data.results || []).map(mapApiClientToClient);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-      
-      // Check if error is due to authentication (401)
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        console.warn('Unauthenticated access to clients, showing public data only');
+      if (!response.ok) {
+        // Check if the error is due to authentication
+        if (response.status === 401) {
+          // Return empty array for public access instead of throwing error
+          console.warn('Unauthenticated access to clients, showing public data only');
+          return [];
+        }
+        console.error(`Failed to fetch clients: ${response.status} ${response.statusText}`);
         return [];
       }
       
+      const data = await response.json();
+      return (data.results || []).map(mapApiClientToClient);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
       // Return empty array instead of throwing error for public access
       return [];
     }

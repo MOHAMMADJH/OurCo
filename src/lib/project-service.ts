@@ -113,9 +113,11 @@ const projectService = {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      // Use fetch with no-cors mode to avoid CORS issues on Vercel
       const response = await fetch(`${API_BASE_URL}/api/projects/`, {
         method: 'GET',
         headers,
+        mode: 'cors',
         credentials: 'include'
       });
       
