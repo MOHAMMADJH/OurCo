@@ -12,6 +12,7 @@ export interface User {
   last_name: string;
   is_admin: boolean;
   role: string; // Added to match useAuth.ts requirements
+  name?: string; // Added for compatibility with debug.tsx
 }
 
 // Blog types

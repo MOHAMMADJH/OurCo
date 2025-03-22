@@ -52,7 +52,7 @@ const TagsPage = () => {
     try {
       setLoading(true);
       const token = await getToken();
-      const response = await BlogService.getAllTags(token);
+      const response = await BlogService.getAllTags();
       setTags(response.results || response);
       setError(null);
     } catch (err) {
@@ -74,7 +74,7 @@ const TagsPage = () => {
 
     try {
       const token = await getToken();
-      const response = await BlogService.createTag({ name: newTag.trim() }, token);
+      const response = await BlogService.createTag({ name: newTag.trim() }, token || '');
       setTags([...tags, response]);
       setNewTag("");
       toast({
@@ -102,7 +102,7 @@ const TagsPage = () => {
     try {
       setDeleteLoading(true);
       const token = await getToken();
-      await BlogService.deleteTag(tagToDelete.id, token);
+      await BlogService.deleteTag(tagToDelete.id, token || '');
       setTags(tags.filter((tag) => tag.id !== tagToDelete.id));
       setDeleteDialogOpen(false);
       setTagToDelete(null);
@@ -139,7 +139,7 @@ const TagsPage = () => {
       const updatedTag = await BlogService.updateTagSlug(
         tagToUpdateSlug.slug, 
         newSlug.trim(), 
-        token
+        token || ''
       );
       
       // تحديث قائمة الوسوم بالـ slug الجديد

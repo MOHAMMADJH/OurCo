@@ -446,7 +446,7 @@ const ProjectsPage = () => {
         <ProjectDeleteDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          projectId={selectedProject.id}
+          // projectId property removed as it's not in the component interface
           projectTitle={selectedProject.title}
           onDelete={() => handleDeleteProject(selectedProject.id)}
         />
@@ -457,7 +457,7 @@ const ProjectsPage = () => {
         <ProjectDetailsDialog
           open={detailsDialogOpen}
           onOpenChange={setDetailsDialogOpen}
-          projectId={selectedProject.id}
+          // projectId property removed as it's not in the component interface
         />
       )}
 
@@ -466,7 +466,7 @@ const ProjectsPage = () => {
         <ProjectImagesDialog
           open={imagesDialogOpen}
           onOpenChange={setImagesDialogOpen}
-          projectId={selectedProject.id}
+          // projectId property removed as it's not in the component interface
         />
       )}
 
@@ -475,7 +475,7 @@ const ProjectsPage = () => {
         <ProjectProgressDialog
           open={progressDialogOpen}
           onOpenChange={setProgressDialogOpen}
-          projectId={selectedProject.id}
+          // projectId property removed as it's not in the component interface
           currentProgress={selectedProject.progress}
           onProgressUpdated={fetchProjects}
         />

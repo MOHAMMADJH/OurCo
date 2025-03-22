@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 import { X } from "lucide-react";
-import { ITag } from "@/services/blogService";
+import { ITag } from "@/lib/blog-service";
 import { Button } from "../ui/button"; // Import Button component
 import { ScrollArea } from "../ui/scroll-area"; // Import ScrollArea component
 
