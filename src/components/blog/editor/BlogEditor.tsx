@@ -68,7 +68,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, getToken } = useAuth();
-  const { categories, addCategory, deleteCategory, loading: categoriesLoading } = useCategories();
+  const { categories, addCategory, deleteCategory, loading } = useCategories();
   const { tags, addTag, deleteTag, loading: tagsLoading } = useTags();
   
   // Initialize post state
@@ -156,7 +156,12 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   // Handle category selection
   const handleCategoryChange = (categoryId: string) => {
     const selectedCategory = categories.find(c => c.id === categoryId);
-    setPost(prev => ({ ...prev, categories: [...(prev.categories || []), selectedCategory] }));
+    if (selectedCategory) {
+      setPost(prev => ({ 
+        ...prev, 
+        categories: [...(prev.categories || []), selectedCategory] 
+      }));
+    }
   };
 
   // Handle tags selection
@@ -294,7 +299,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   // Calculate loading state
-  const isLoading = categoriesLoading || tagsLoading;
+  const isLoading = loading || tagsLoading;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr,300px]">
@@ -457,18 +462,32 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
       <div className="space-y-6">
         <CategorySelector 
           categories={categories} 
-          selectedCategories={post.categories?.map(category => category.id) || []} 
-          onSelectCategory={(category: CategoryType) => {
-            const exists = post.categories?.some(c => c.id === category.id) || false;
-            if (!exists) {
+          selectedCategory={post.categories?.[0]?.id || ""}
+          onChange={(categoryId: string) => {
+            const selectedCategory = categories.find(c => c.id === categoryId);
+            if (selectedCategory) {
               setPost(prev => ({
                 ...prev,
-                categories: [...(prev.categories || []), category]
+                categories: [selectedCategory]
+              }));
+            } else {
+              setPost(prev => ({
+                ...prev,
+                categories: []
               }));
             }
           }}
-          onRemoveCategory={handleRemoveCategory}
-          onCreateCategory={addCategory}
+          onAddCategory={async (name: string) => {
+            if (addCategory) {
+              await addCategory({ name, slug: "" });
+            }
+          }}
+          onDeleteCategory={async (id: string) => {
+            if (deleteCategory) {
+              await deleteCategory(id);
+            }
+          }}
+          isLoading={loading}
         />
         
         <Label className="mb-2 block text-white">التصنيفات</Label>
