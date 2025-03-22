@@ -37,41 +37,46 @@ const clientService = {
   // Get all clients
   async getClients(): Promise<Client[]> {
     try {
+      // تحقق من وجود توكن المصادقة
       const token = localStorage.getItem('accessToken');
-      const headers: Record<string, string> = {
+      
+      // تحضير الهيدرز
+      const headers: HeadersInit = {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       };
       
-      // Add authorization header only if token exists
+      // إضافة توكن المصادقة إذا كان موجودًا
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // Try using fetch instead of axios to match the project service approach
+      // إجراء الطلب باستخدام fetch API
       const response = await fetch(`${API_BASE_URL}/api/clients/`, {
         method: 'GET',
         headers,
-        mode: 'cors',
         credentials: 'include'
       });
       
-      if (!response.ok) {
-        // Check if the error is due to authentication
-        if (response.status === 401) {
-          // Return empty array for public access instead of throwing error
-          console.warn('Unauthenticated access to clients, showing public data only');
-          return [];
-        }
-        console.error(`Failed to fetch clients: ${response.status} ${response.statusText}`);
+      // التحقق من نجاح الطلب
+      if (response.ok) {
+        const data = await response.json();
+        return (data.results || []).map(mapApiClientToClient);
+      }
+      
+      // معالجة حالة عدم المصادقة
+      if (response.status === 401) {
+        console.warn('Unauthenticated access to clients, public data only');
+        // إذا كان المستخدم غير مصادق، نعيد مصفوفة فارغة بدلاً من رمي خطأ
         return [];
       }
       
-      const data = await response.json();
-      return (data.results || []).map(mapApiClientToClient);
+      // معالجة أخطاء أخرى
+      console.error(`API Error: ${response.status} ${response.statusText}`);
+      return [];
     } catch (error) {
+      // معالجة أخطاء الشبكة أو أخطاء أخرى
       console.error('Error fetching clients:', error);
-      // Return empty array instead of throwing error for public access
       return [];
     }
   },

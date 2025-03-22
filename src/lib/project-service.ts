@@ -102,41 +102,46 @@ const projectService = {
   // Get all projects
   async getProjects(): Promise<Project[]> {
     try {
+      // تحقق من وجود توكن المصادقة
       const token = localStorage.getItem('accessToken');
-      const headers: Record<string, string> = {
+      
+      // تحضير الهيدرز
+      const headers: HeadersInit = {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       };
       
-      // Add authorization header only if token exists
+      // إضافة توكن المصادقة إذا كان موجودًا
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // Use fetch with no-cors mode to avoid CORS issues on Vercel
+      // إجراء الطلب باستخدام fetch API
       const response = await fetch(`${API_BASE_URL}/api/projects/`, {
         method: 'GET',
         headers,
-        mode: 'cors',
         credentials: 'include'
       });
       
-      if (!response.ok) {
-        // Check if the error is due to authentication
-        if (response.status === 401) {
-          // Return empty array for public access instead of throwing error
-          console.warn('Unauthenticated access to projects, showing public data only');
-          return [];
-        }
-        console.error(`Failed to fetch projects: ${response.status} ${response.statusText}`);
+      // التحقق من نجاح الطلب
+      if (response.ok) {
+        const data = await response.json();
+        return (data.results || []).map(mapApiProjectToProject);
+      }
+      
+      // معالجة حالة عدم المصادقة
+      if (response.status === 401) {
+        console.warn('Unauthenticated access to projects, public data only');
+        // إذا كان المستخدم غير مصادق، نعيد مصفوفة فارغة بدلاً من رمي خطأ
         return [];
       }
       
-      const data = await response.json();
-      return (data.results || []).map(mapApiProjectToProject);
+      // معالجة أخطاء أخرى
+      console.error(`API Error: ${response.status} ${response.statusText}`);
+      return [];
     } catch (error) {
+      // معالجة أخطاء الشبكة أو أخطاء أخرى
       console.error('Error fetching projects:', error);
-      // Return empty array instead of throwing error for public access
       return [];
     }
   },
