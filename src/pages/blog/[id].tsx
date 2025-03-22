@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useAuth } from '@/hooks/useAuth';
 import Navbar from '@/components/navigation/Navbar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,14 +30,17 @@ interface Comment {
 const BlogPostPage = () => {
   const { id } = useParams();
   const { currentLang, isRTL } = useLanguage();
+  const { getToken } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [postId, setPostId] = useState<string>('');
   useEffect(() => {
     const fetchPost = async () => {
       try {
+        const token = getToken();
         const fetchedPost = await blogService.getPostById(id, token || '');
         // Convert IPost to Post
         const convertedPost = {
@@ -62,14 +66,11 @@ const BlogPostPage = () => {
     };
 
     fetchPost();
-  }, [id, token]);
-
-  useEffect(() => {
-    setToken(authService.getToken());
-  }, []);
+  }, [id, getToken]);
 
   const addComment = async (commentData: any) => {
     try {
+      const token = getToken();
       const newComment = await blogService.addComment(postId, commentData, token || '');
       // Convert IComment to Comment
       const convertedComment: Comment = {
