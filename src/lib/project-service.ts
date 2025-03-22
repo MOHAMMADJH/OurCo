@@ -115,6 +115,12 @@ const projectService = {
       });
       
       if (!response.ok) {
+        // Check if the error is due to authentication
+        if (response.status === 401) {
+          // Return empty array for public access instead of throwing error
+          console.warn('Unauthenticated access to projects, showing public data only');
+          return [];
+        }
         throw new Error('Failed to fetch projects');
       }
       
@@ -122,7 +128,8 @@ const projectService = {
       return (data.results || []).map(mapApiProjectToProject);
     } catch (error) {
       console.error('Error fetching projects:', error);
-      throw error;
+      // Return empty array instead of throwing error for public access
+      return [];
     }
   },
 
