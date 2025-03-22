@@ -24,26 +24,32 @@ interface IPost {
   content?: string;
   excerpt?: string;
   featured_image?: string | null;
-  published_at?: Date | null;
   status?: 'draft' | 'published' | 'scheduled' | 'archived';
-  author?: string;
-  author_id?: string;
-  tags: TagType[];
-  categories: CategoryType[];
+  published_at?: Date | string | null;
+  created_at?: string;
+  updated_at?: string;
+  author?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  categories?: CategoryType[];
+  tags?: TagType[];
+  comments_count?: number;
+  views_count?: number;
   reading_time?: number;
 }
 
 interface IPostCreate {
   title: string;
-  slug: string;
+  slug?: string;
   content: string;
-  excerpt: string;
-  featured_image?: string | null;
-  published_at?: Date | null;
-  status: 'draft' | 'published' | 'scheduled' | 'archived';
-  author_id: string;
-  tag_ids: string[];
-  category_ids: string[];
+  excerpt?: string;
+  featured_image?: File | null;
+  status?: 'draft' | 'published' | 'scheduled' | 'archived';
+  published_at?: string | null;
+  category_ids?: string[];
+  tag_ids?: string[];
 }
 
 // BlogEditor props
@@ -233,7 +239,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
       }
 
       // Prepare post data for API
-      const postData: Partial<IPostCreate> = {
+      const postData: IPostCreate = {
         title: post.title || "",
         slug: post.slug || generateSlugFromTitle(post.title || ""),
         content: post.content || "",
@@ -247,7 +253,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
       if (post.published_at) {
         postData.published_at = post.published_at instanceof Date ? 
             post.published_at.toISOString() : 
-            post.published_at;
+            typeof post.published_at === 'string' ? post.published_at : null;
       }
 
       let savedPost;
@@ -261,17 +267,17 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
         );
         toast({
           title: "تم حفظ المقال",
-          description: publishNow ? "تم نشر المقال بنجاح" : "تم حفظ المقال كمسودة",
+          description: publishNow ? "تم نشر المقال" : "تم حفظ المقال كمسودة",
         });
       } else {
         // Create new post
         savedPost = await BlogService.createPost(
           token,
-          postData as IPostCreate
+          postData
         );
         toast({
           title: "تم إنشاء المقال",
-          description: publishNow ? "تم نشر المقال الجديد بنجاح" : "تم حفظ المقال الجديد كمسودة",
+          description: publishNow ? "تم نشر المقال الجديد" : "تم حفظ المقال الجديد كمسودة",
         });
       }
 
@@ -451,7 +457,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
       <div className="space-y-6">
         <CategorySelector 
           categories={categories} 
-          selectedCategories={post.categories || []} 
+          selectedCategories={post.categories?.map(category => category.id) || []} 
           onSelectCategory={(category: CategoryType) => {
             const exists = post.categories?.some(c => c.id === category.id) || false;
             if (!exists) {
