@@ -38,14 +38,15 @@ const clientService = {
   async getClients(): Promise<Client[]> {
     try {
       const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('Authentication required. Please log in.');
+      const headers: Record<string, string> = {};
+      
+      // Add authorization header only if token exists
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
 
       const response = await axios.get(`${API_BASE_URL}/api/clients/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers
       });
       
       // API returns data in a results array

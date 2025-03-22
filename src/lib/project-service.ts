@@ -103,18 +103,21 @@ const projectService = {
   async getProjects(): Promise<Project[]> {
     try {
       const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('Authentication required. Please log in.');
+      const headers: Record<string, string> = {};
+      
+      // Add authorization header only if token exists
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
 
       const response = await fetch(`${API_BASE_URL}/api/projects/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers
       });
+      
       if (!response.ok) {
         throw new Error('Failed to fetch projects');
       }
+      
       const data = await response.json();
       return (data.results || []).map(mapApiProjectToProject);
     } catch (error) {
