@@ -117,7 +117,7 @@ const BlogEditor: React.FC = () => {
           content: post.content || "",
           excerpt: post.excerpt || "",
           category_id: post.category?.id || null,
-          tag_ids: post.tags?.map(tag => tag.id) || [],
+          tag_ids: post.tags?.map((tag: ITag) => tag.id) || [],
           status: post.status,
           slug: post.slug || "",
         });
