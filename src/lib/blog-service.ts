@@ -22,6 +22,7 @@ export interface IPost {
   comments_count: number;
   views_count: number;
   reading_time: number;
+  comments?: IComment[];
 }
 
 export interface IPostCreate {

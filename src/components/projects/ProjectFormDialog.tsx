@@ -335,7 +335,7 @@ const ProjectFormDialog = ({
               <span className="text-sm text-gray-400">{formData.progress}%</span>
             </div>
             <Slider
-              value={[formData.progress]}
+              value={[formData.progress ?? 0]}
               min={0}
               max={100}
               step={5}
