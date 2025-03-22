@@ -31,11 +31,9 @@ const LoginPage = () => {
 
     try {
       const user = await login(formData);
-      if (user.is_admin) {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+      // توجيه جميع المستخدمين إلى /dashboard بغض النظر عن صلاحياتهم
+      // سيتم التحقق من الصلاحيات في مكون ProtectedRoute
+      navigate('/dashboard');
     } catch (err) {
       setError('Login failed. Please check your credentials.');
     } finally {
