@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './constants';
+import { authService } from './auth-service';
 
 export interface ProjectImage {
   id: string;

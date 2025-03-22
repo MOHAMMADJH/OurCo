@@ -115,9 +115,27 @@ class AuthService {
       localStorage.setItem('accessToken', response.data.access);
       return response.data.access;
     } catch (error) {
+      console.error('Token refresh failed:', error);
       this.logout();
       return null;
     }
+  }
+
+  // Get token with auto-refresh if needed
+  async getAuthToken(): Promise<string | null> {
+    if (this.accessToken) {
+      return this.accessToken;
+    }
+    
+    // Try to get from localStorage
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      this.accessToken = token;
+      return token;
+    }
+    
+    // If no token, try to refresh
+    return await this.refreshAccessToken();
   }
 }
 
