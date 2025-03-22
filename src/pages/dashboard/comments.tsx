@@ -81,7 +81,7 @@ const CommentsPage: React.FC = () => {
     try {
       setActionLoading(commentId);
       const token = await getToken();
-      await BlogService.approveComment(commentId, token);
+      await BlogService.approveComment(commentId ?? '', token ?? '');
       
       // Update comment in state
       setComments(prevComments => 
@@ -110,7 +110,7 @@ const CommentsPage: React.FC = () => {
     try {
       setActionLoading(commentId);
       const token = await getToken();
-      await BlogService.rejectComment(commentId, token);
+      await BlogService.rejectComment(commentId ?? '', token ?? '');
       
       // Update comment in state
       setComments(prevComments => 
@@ -146,7 +146,7 @@ const CommentsPage: React.FC = () => {
     try {
       setDeleteLoading(true);
       const token = await getToken();
-      await BlogService.deleteComment(commentToDelete.id, token);
+      await BlogService.deleteComment(commentToDelete.id ?? '', token ?? '');
       
       // Remove comment from state
       setComments(prevComments => 

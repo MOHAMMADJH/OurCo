@@ -306,7 +306,7 @@ const ClientsPage = () => {
             handleCreateClient(data);
           }
         }}
-        defaultValues={selectedClient || {}}
+        defaultValues={selectedClient || undefined}
       />
 
       {/* Client Delete Dialog */}

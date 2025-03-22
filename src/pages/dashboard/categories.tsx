@@ -76,7 +76,7 @@ const CategoriesPage = () => {
 
     try {
       const token = await getToken();
-      const response = await BlogService.createCategory({ name: newCategory.trim() }, token);
+      const response = await BlogService.createCategory({ name: newCategory.trim() }, token ?? '');
       setCategories([...categories, response]);
       setNewCategory("");
       toast({
@@ -104,7 +104,7 @@ const CategoriesPage = () => {
     try {
       setDeleteLoading(true);
       const token = await getToken();
-      await BlogService.deleteCategory(categoryToDelete.id || '', token);
+      await BlogService.deleteCategory(categoryToDelete.id || '', token ?? '');
       setCategories(categories.filter((cat) => cat.id !== categoryToDelete.id));
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);
@@ -141,7 +141,7 @@ const CategoriesPage = () => {
       const updatedCategory = await BlogService.updateCategorySlug(
         categoryToUpdateSlug.slug ?? '', 
         newSlug.trim(), 
-        token
+        token ?? ''
       );
       
       // تحديث قائمة الفئات بالـ slug الجديد
