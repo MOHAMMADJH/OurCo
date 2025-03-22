@@ -8,6 +8,8 @@ export interface ICategory {
   slug: string;
   description?: string;
   created_at: string;
+  updated_at?: string;
+  posts_count?: number;
 }
 
 export interface ITag {

@@ -18,10 +18,12 @@ interface Post {
 }
 
 interface Comment {
-  id: number;
+  id: string;
+  name: string;
+  email: string;
   content: string;
-  author: number;
   created_at: string;
+  is_approved: boolean;
 }
 
 const BlogPostPage = () => {

@@ -52,7 +52,7 @@ const CategoriesPage = () => {
     try {
       setLoading(true);
       const token = await getToken();
-      const response = await BlogService.getAllCategories(token);
+      const response = await BlogService.getAllCategories();
       setCategories(response.results || response);
       setError(null);
     } catch (err) {
@@ -102,7 +102,7 @@ const CategoriesPage = () => {
     try {
       setDeleteLoading(true);
       const token = await getToken();
-      await BlogService.deleteCategory(categoryToDelete.id, token);
+      await BlogService.deleteCategory(categoryToDelete.id || '', token);
       setCategories(categories.filter((cat) => cat.id !== categoryToDelete.id));
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);
@@ -137,7 +137,7 @@ const CategoriesPage = () => {
       setSlugUpdateLoading(true);
       const token = await getToken();
       const updatedCategory = await BlogService.updateCategorySlug(
-        categoryToUpdateSlug.slug, 
+        categoryToUpdateSlug.slug || '', 
         newSlug.trim(), 
         token
       );

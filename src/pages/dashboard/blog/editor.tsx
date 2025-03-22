@@ -157,8 +157,13 @@ const BlogEditor: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleCategoryCreated = (newCategory: ICategory) => {
-    setCategories(prev => [...prev, newCategory]);
+  const handleCategoryCreated = (newCategory: { id: string; name: string; slug: string; description?: string }) => {
+    // Convert to ICategory by adding the required created_at property
+    const categoryWithCreatedAt: ICategory = {
+      ...newCategory,
+      created_at: new Date().toISOString()
+    };
+    setCategories(prev => [...prev, categoryWithCreatedAt]);
     form.setValue("category_id", newCategory.id);
   };
 
@@ -166,7 +171,7 @@ const BlogEditor: React.FC = () => {
     setTags(prev => [
       ...prev,
       ...newTags
-        .filter(newTag => !prev.some(tag => tag.id === newTag.value))
+        .filter(newTag => !prev.some((tag: ITag) => tag.id === newTag.value))
         .map(newTag => ({ id: newTag.value, name: newTag.label, slug: "" }))
     ]);
   };
