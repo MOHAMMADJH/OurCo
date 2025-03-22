@@ -111,6 +111,15 @@ class BlogService {
     return response.data;
   }
 
+  async getPostById(id: string | undefined, token: string): Promise<IPost> {
+    if (!id) throw new Error('Post ID is required');
+    const response = await axios.get(`${this.baseUrl}/posts/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    return response.data;
+  }
+
   async getPostBySlug(slug: string): Promise<IPost> {
     const response = await axios.get(`${this.baseUrl}/posts/slug/${slug}`);
     return response.data;
@@ -327,6 +336,16 @@ class BlogService {
     const response = await axios.post(
       `${this.baseUrl}/posts/${postId}/comments`,
       data,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    
+    return response.data;
+  }
+
+  async addComment(postId: string, commentData: { content: string }, token: string): Promise<IComment> {
+    const response = await axios.post(
+      `${this.baseUrl}/posts/${postId}/comments`,
+      commentData,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     

@@ -34,7 +34,6 @@ const BlogPostPage = () => {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   useEffect(() => {
     const fetchPost = async () => {
       try {
@@ -64,9 +63,6 @@ const BlogPostPage = () => {
 
     fetchPost();
   }, [id, token]);
-
-  const [postId, setPostId] = useState('');
-  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     setToken(authService.getToken());
