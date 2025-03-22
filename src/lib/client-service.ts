@@ -38,7 +38,10 @@ const clientService = {
   async getClients(): Promise<Client[]> {
     try {
       const token = localStorage.getItem('accessToken');
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
       
       // Add authorization header only if token exists
       if (token) {
@@ -46,7 +49,8 @@ const clientService = {
       }
 
       const response = await axios.get(`${API_BASE_URL}/api/clients/`, {
-        headers
+        headers,
+        withCredentials: true
       });
       
       // API returns data in a results array

@@ -103,7 +103,10 @@ const projectService = {
   async getProjects(): Promise<Project[]> {
     try {
       const token = localStorage.getItem('accessToken');
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
       
       // Add authorization header only if token exists
       if (token) {
@@ -111,7 +114,9 @@ const projectService = {
       }
 
       const response = await fetch(`${API_BASE_URL}/api/projects/`, {
-        headers
+        method: 'GET',
+        headers,
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -121,7 +126,8 @@ const projectService = {
           console.warn('Unauthenticated access to projects, showing public data only');
           return [];
         }
-        throw new Error('Failed to fetch projects');
+        console.error(`Failed to fetch projects: ${response.status} ${response.statusText}`);
+        return [];
       }
       
       const data = await response.json();
