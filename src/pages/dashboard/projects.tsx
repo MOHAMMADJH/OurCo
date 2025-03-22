@@ -123,11 +123,22 @@ const ProjectsPage = () => {
     try {
       setLoading(true);
       const data = await projectService.getProjects();
-      setProjects(data);
-      setError(null);
+      
+      if (data.length === 0) {
+        // تحقق مما إذا كانت المصفوفة فارغة بسبب مشكلة في المصادقة
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          setError('يرجى تسجيل الدخول لعرض المشاريع');
+        } else {
+          setError('لا توجد مشاريع متاحة حالياً');
+        }
+      } else {
+        setProjects(data);
+        setError(null);
+      }
     } catch (err) {
-      setError('حدث خطأ أثناء تحميل المشاريع');
       console.error('Error fetching projects:', err);
+      setError('حدث خطأ أثناء تحميل المشاريع');
     } finally {
       setLoading(false);
     }
