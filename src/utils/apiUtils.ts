@@ -79,9 +79,9 @@ export const getApiBaseUrl = (): string => {
   
   // Default to production URL if not in development
   if (import.meta.env.PROD) {
-    return 'https://api.ourco.com';
+    return 'https://mohjaspy.pythonanywhere.com/';
   }
   
   // Use localhost for development
-  return 'http://localhost:8000';
+  return 'https://mohjaspy.pythonanywhere.com';
 };

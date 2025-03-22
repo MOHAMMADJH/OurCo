@@ -1,21 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
-import BlogService from '@/lib/blog-service';
+import BlogService, { ICategory, ITag } from '@/lib/blog-service';
 import { handleApiError } from '@/utils/apiUtils';
 
 // تعريف أنواع البيانات الداخلية
-interface CategoryType {
+export interface CategoryType {
   id: string;
   name: string;
   slug: string;
   description: string;
+  created_at?: string; 
+  updated_at?: string;
 }
 
-interface TagType {
+export interface TagType {
   id: string;
   name: string;
   slug: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**
@@ -33,7 +37,7 @@ export function useCategories() {
     setLoading(true);
     try {
       const fetchedCategories = await BlogService.getCategories(token);
-      setCategories(fetchedCategories);
+      setCategories(fetchedCategories as unknown as CategoryType[]);
       setError(null);
     } catch (err) {
       setError(err as Error);
@@ -62,7 +66,7 @@ export function useCategories() {
           categoryData.description || '',
           token
         );
-        setCategories(prev => [...prev, newCategory]);
+        setCategories(prev => [...prev, newCategory as unknown as CategoryType]);
         toast({
           title: 'نجاح',
           description: 'تم إضافة التصنيف بنجاح',
@@ -98,14 +102,12 @@ export function useCategories() {
       setLoading(true);
       try {
         const updatedCategory = await BlogService.updateCategory(
+          token,
           categoryId,
-          categoryData.name || '',
-          categoryData.slug || '',
-          categoryData.description || '',
-          token
+          categoryData
         );
         setCategories(prev =>
-          prev.map(cat => (cat.id === categoryId ? updatedCategory : cat))
+          prev.map(cat => (cat.id === categoryId ? updatedCategory as unknown as CategoryType : cat))
         );
         toast({
           title: 'نجاح',
@@ -168,7 +170,7 @@ export function useCategories() {
     addCategory,
     updateCategory,
     deleteCategory,
-    isCategoryLoading: {} // إضافة هذا الحقل للتوافق مع الكود الحالي
+    isCategoryLoading: loading // إصلاح هذا الحقل للتوافق مع الكود الحالي
   };
 }
 
@@ -187,7 +189,7 @@ export function useTags() {
     setLoading(true);
     try {
       const fetchedTags = await BlogService.getTags(token);
-      setTags(fetchedTags);
+      setTags(fetchedTags as unknown as TagType[]);
       setError(null);
     } catch (err) {
       setError(err as Error);
@@ -202,10 +204,7 @@ export function useTags() {
   }, [token, toast]);
 
   const addTag = useCallback(
-    async (tagData: { 
-      name?: string;
-      slug?: string;
-    }) => {
+    async (tagData: { name?: string; slug?: string }) => {
       if (!token) return null;
       setLoading(true);
       try {
@@ -214,7 +213,7 @@ export function useTags() {
           tagData.slug || '',
           token
         );
-        setTags(prev => [...prev, newTag]);
+        setTags(prev => [...prev, newTag as unknown as TagType]);
         toast({
           title: 'نجاح',
           description: 'تم إضافة الوسم بنجاح',
@@ -255,7 +254,7 @@ export function useTags() {
           token
         );
         setTags(prev =>
-          prev.map(tag => (tag.id === tagId ? updatedTag : tag))
+          prev.map(tag => (tag.id === tagId ? updatedTag as unknown as TagType : tag))
         );
         toast({
           title: 'نجاح',
@@ -309,7 +308,7 @@ export function useTags() {
   useEffect(() => {
     fetchTags();
   }, [fetchTags]);
-  
+
   return {
     tags,
     loading,
@@ -318,6 +317,6 @@ export function useTags() {
     addTag,
     updateTag,
     deleteTag,
-    isTagLoading: {} // إضافة هذا الحقل للتوافق مع الكود الحالي
+    isTagLoading: loading // إصلاح هذا الحقل للتوافق مع الكود الحالي
   };
 }

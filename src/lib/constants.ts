@@ -1,5 +1,5 @@
 // API constants
-export const API_BASE_URL = 'http://localhost:8000';
+export const API_BASE_URL = 'https://mohjaspy.pythonanywhere.com';
 
 // Project status mappings
 export const PROJECT_STATUS = {

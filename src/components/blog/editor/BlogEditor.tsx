@@ -1,60 +1,67 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Loader2, Save } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import BlogService, { IPost, IPostCreate, ICategory, ITag } from "@/lib/blog-service";
+import BlogService from "@/lib/blog-service";
 import { handleApiError } from "@/utils/apiUtils";
 import RichTextEditor from "./RichTextEditor";
 import CategorySelector from "./CategorySelector";
 import TagSelector from "./TagSelector";
 import PostScheduler from "./PostScheduler";
-import { PostStatus } from "../common/PostStatusBadge";
-import { useCategories, useTags } from "@/features/blog/hooks";
+import { CategoryType, TagType, useCategories, useTags } from "@/features/blog/hooks";
 
+// Define interfaces here
+interface IPost {
+  id?: string;
+  title?: string;
+  slug?: string;
+  content?: string;
+  excerpt?: string;
+  featured_image?: string | null;
+  published_at?: Date | null;
+  status?: 'draft' | 'published' | 'scheduled' | 'archived';
+  author?: string;
+  author_id?: string;
+  tags: TagType[];
+  categories: CategoryType[];
+  reading_time?: number;
+}
+
+interface IPostCreate {
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  featured_image?: string | null;
+  published_at?: Date | null;
+  status: 'draft' | 'published' | 'scheduled' | 'archived';
+  author_id: string;
+  tag_ids: string[];
+  category_ids: string[];
+}
+
+// BlogEditor props
 interface BlogEditorProps {
-  /**
-   * Initial post data (for editing mode)
-   */
-  initialPost?: IPost;
-  /**
-   * Whether the editor is in edit mode or create mode
-   * @default false
-   */
+  initialPost?: Partial<IPost>;
   isEditMode?: boolean;
 }
 
 /**
  * Unified blog post editor component for both creating and editing posts
  */
-const BlogEditor: React.FC<BlogEditorProps> = ({ 
+const BlogEditor: React.FC<BlogEditorProps> = ({
   initialPost, 
   isEditMode = false 
 }) => {
   const navigate = useNavigate();
-  const params = useParams();
   const { toast } = useToast();
-  const { getToken } = useAuth();
+  const { user, getToken } = useAuth();
+  const { categories, addCategory, deleteCategory, loading: categoriesLoading } = useCategories();
+  const { tags, addTag, deleteTag, loading: tagsLoading } = useTags();
   
-  // Fetch categories and tags using custom hooks
-  const { 
-    categories, 
-    loading: categoriesLoading, 
-    isCategoryLoading,
-    addCategory,
-    deleteCategory
-  } = useCategories();
-  
-  const { 
-    tags, 
-    loading: tagsLoading, 
-    isTagLoading,
-    addTag,
-    deleteTag
-  } = useTags();
-
   // Initialize post state
   const [post, setPost] = useState<Partial<IPost>>({
     title: "",
@@ -63,35 +70,34 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
     excerpt: "",
     featured_image: null,
     status: "draft",
-    categories: [],
-    tags: []
+    tags: [],
+    categories: []
   });
 
-  // Generate slug from title
-  const generateSlug = () => {
-    if (!post.title) return;
-    
-    const slug = post.title
+  // Function to generate a slug from a title with Arabic support
+  const generateSlugFromTitle = (title: string): string => {
+    if (!title) return "";
+    // توليد slug يدعم اللغة العربية
+    return title
       .trim()
       .toLowerCase()
       .replace(/\s+/g, "-")
-      .replace(/[^\w\-]+/g, "")
+      .replace(/[^\w\u0621-\u064A\-]+/g, "") // دعم الأحرف العربية
       .replace(/\-\-+/g, "-");
-      
-    setPost(prev => ({ ...prev, slug }));
+  };
+
+  // Generate slug from title
+  const handleGenerateSlug = () => {
+    if (!post.title) return;
     
-    // Clear error for slug if any
-    if (errors.slug) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.slug;
-        return newErrors;
-      });
-    }
+    const slug = generateSlugFromTitle(post.title);
+    
+    setPost(prev => ({ ...prev, slug }));
   };
 
   // Additional state for UI
   const [isSaving, setIsSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Handle input changes
@@ -125,63 +131,11 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
     }
   };
 
-  // تحديث slug المقالة
-  const handleUpdateSlug = async () => {
-    if (!isEditMode || !post.slug) return;
-    
-    try {
-      const token = await getToken();
-      if (!token) {
-        toast({
-          title: "خطأ في المصادقة",
-          description: "يرجى تسجيل الدخول مرة أخرى",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setIsSaving(true);
-      
-      // استخدام slug مخصص أو توليد من العنوان
-      const newSlug = post.slug || (post.title ? post.title
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^\w\-]+/g, "")
-        .replace(/\-\-+/g, "-") : "");
-      
-      // تحديث slug عبر API
-      const updatedPost = await BlogService.updatePostSlug(
-        initialPost?.slug || "", 
-        newSlug, 
-        token
-      );
-      
-      // تحديث حالة المقالة بـ slug الجديد
-      setPost(prev => ({ ...prev, slug: updatedPost.slug }));
-      
-      // تحديث الرابط في المتصفح
-      if (params.slug !== updatedPost.slug) {
-        navigate(`/dashboard/blog/edit/${updatedPost.slug}`, { replace: true });
-      }
-      
-      toast({
-        title: "تم تحديث الرابط",
-        description: `تم تحديث رابط المقالة إلى: ${updatedPost.slug}`,
-      });
-    } catch (error) {
-      console.error("Error updating slug:", error);
-      handleApiError(error, "فشل في تحديث رابط المقالة");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   // Remove/update tags from post
   const handleRemoveTag = (tagId: string) => {
     setPost(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag.id !== tagId)
+      tags: prev.tags?.filter(tag => tag.id !== tagId) || []
     }));
   };
 
@@ -189,14 +143,14 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   const handleRemoveCategory = (categoryId: string) => {
     setPost(prev => ({
       ...prev,
-      categories: prev.categories.filter(category => category.id !== categoryId)
+      categories: prev.categories?.filter(category => category.id !== categoryId) || []
     }));
   };
 
   // Handle category selection
   const handleCategoryChange = (categoryId: string) => {
     const selectedCategory = categories.find(c => c.id === categoryId);
-    setPost(prev => ({ ...prev, category: selectedCategory }));
+    setPost(prev => ({ ...prev, categories: [...(prev.categories || []), selectedCategory] }));
   };
 
   // Handle tags selection
@@ -205,16 +159,19 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   // Handle status change
-  const handleStatusChange = (status: 'draft' | 'published' | 'scheduled' | 'archived') => {
+  const handleStatusChange = (newStatus: 'draft' | 'published' | 'scheduled' | 'archived') => {
     setPost(prev => ({
       ...prev,
-      status: status === 'scheduled' ? 'draft' : status
+      status: newStatus
     }));
   };
 
-  // Handle scheduled date change
+  // Handle date change from PostScheduler
   const handleScheduledDateChange = (date: Date | null) => {
-    setPost(prev => ({ ...prev, published_at: date ? date.toISOString() : null }));
+    setPost(prev => ({
+      ...prev,
+      published_at: date
+    }));
   };
 
   // Validate the form
@@ -277,22 +234,14 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
 
       // Prepare post data for API
       const postData: Partial<IPostCreate> = {
-        title: post.title,
-        content: post.content || "",
-        excerpt: post.excerpt,
-        slug: post.slug,
+        title: post.title!,
+        slug: post.slug || generateSlugFromTitle(post.title!),
+        content: post.content!,
+        excerpt: post.excerpt || "",
         status: publishNow ? "published" : "draft",
+        tag_ids: post.tags?.map(tag => tag.id) || [],
+        category_ids: post.categories?.map(category => category.id) || []
       };
-
-      // Handle category
-      if (post.category?.id) {
-        postData.category_id = post.category.id;
-      }
-
-      // Handle tags
-      if (post.tags && post.tags.length > 0) {
-        postData.tag_ids = post.tags.map(tag => tag.id);
-      }
 
       // Handle scheduled publishing
       if (post.published_at) {
@@ -357,7 +306,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
             }}
             onBlur={() => {
               if (post.title && !post.slug) {
-                generateSlug();
+                handleGenerateSlug();
               }
             }}
             className="mb-4 border-white/10 bg-white/5 text-right text-2xl text-white placeholder:text-gray-400"
@@ -383,7 +332,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
             <Button
               type="button"
               variant="outline"
-              onClick={generateSlug}
+              onClick={handleGenerateSlug}
               className="whitespace-nowrap border-white/10 text-white hover:bg-white/10"
             >
               إنشاء تلقائي
@@ -392,7 +341,49 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleUpdateSlug}
+                onClick={async () => {
+                  try {
+                    const token = await getToken();
+                    if (!token) {
+                      toast({
+                        title: "خطأ في المصادقة",
+                        description: "يرجى تسجيل الدخول مرة أخرى",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    setIsSaving(true);
+                    
+                    // استخدام slug مخصص أو توليد من العنوان
+                    const newSlug = post.slug || (post.title ? generateSlugFromTitle(post.title) : "");
+                    
+                    // تحديث slug عبر API
+                    const updatedPost = await BlogService.updatePostSlug(
+                      initialPost?.slug || "", 
+                      newSlug, 
+                      token
+                    );
+                    
+                    // تحديث حالة المقالة بـ slug الجديد
+                    setPost(prev => ({ ...prev, slug: updatedPost.slug }));
+                    
+                    // تحديث الرابط في المتصفح
+                    if (location.pathname !== `/dashboard/blog/edit/${updatedPost.slug}`) {
+                      navigate(`/dashboard/blog/edit/${updatedPost.slug}`, { replace: true });
+                    }
+                    
+                    toast({
+                      title: "تم تحديث الرابط",
+                      description: `تم تحديث رابط المقالة إلى: ${updatedPost.slug}`,
+                    });
+                  } catch (error) {
+                    console.error("Error updating slug:", error);
+                    handleApiError(error, "فشل في تحديث رابط المقالة");
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
                 disabled={isSaving}
                 className="whitespace-nowrap border-white/10 text-white hover:bg-white/10"
               >
@@ -417,8 +408,9 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
 
         <RichTextEditor 
           value={post.content || ""} 
-          onChange={(content) => setPost({ ...post, content })}
-          error={errors.content}
+          onChange={(content) => handleContentChange(content)}
+          className="min-h-[300px] rounded border border-white/10 bg-white/5 p-4 text-white/90"
+          placeholder="اكتب محتوى المقال هنا..."
         />
 
         <div className="flex gap-4">
@@ -452,13 +444,13 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
       <div className="space-y-6">
         <CategorySelector 
           categories={categories} 
-          selectedCategories={post.categories} 
-          onSelectCategory={(category) => {
-            const exists = post.categories.some(c => c.id === category.id);
+          selectedCategories={post.categories || []} 
+          onSelectCategory={(category: CategoryType) => {
+            const exists = post.categories?.some(c => c.id === category.id) || false;
             if (!exists) {
               setPost(prev => ({
                 ...prev,
-                categories: [...prev.categories, category]
+                categories: [...(prev.categories || []), category]
               }));
             }
           }}
@@ -468,13 +460,13 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
         
         <TagSelector 
           tags={tags}
-          selectedTags={post.tags}
-          onSelectTag={(tag) => {
-            const exists = post.tags.some(t => t.id === tag.id);
+          selectedTags={post.tags || []}
+          onSelectTag={(tag: TagType) => {
+            const exists = post.tags?.some(t => t.id === tag.id) || false;
             if (!exists) {
               setPost(prev => ({
                 ...prev,
-                tags: [...prev.tags, tag]
+                tags: [...(prev.tags || []), tag]
               }));
             }
           }}
@@ -483,11 +475,40 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
         />
         
         <PostScheduler
-          onDateSelect={handleScheduledDateChange}
+          initialDate={post.published_at}
+          status={post.status as 'draft' | 'published' | 'scheduled'}
           onStatusChange={handleStatusChange}
-          initialDate={post.published_at ? new Date(post.published_at) : null}
-          initialStatus={post.status || 'draft'}
+          onDateChange={handleScheduledDateChange}
         />
+        
+        {/* ملخص المقال */}
+        <div className="mb-6">
+          <label htmlFor="excerpt" className="mb-2 block text-white">
+            ملخص المقال
+          </label>
+          <textarea
+            id="excerpt"
+            value={post.excerpt || ""}
+            onChange={(e) => handleChange(e)}
+            placeholder="أدخل ملخصاً موجزاً للمقال..."
+            className="h-32 w-full resize-none rounded border border-white/10 bg-white/5 p-3 text-white placeholder:text-gray-400"
+          />
+          {errors.excerpt && (
+            <p className="mt-1 text-sm text-red-500">{errors.excerpt}</p>
+          )}
+        </div>
+
+        {/* تحميل صورة مميزة - سيتم تنفيذها لاحقاً */}
+        <div className="mb-6">
+          <label className="mb-2 block text-white">
+            الصورة المميزة
+          </label>
+          <div className="flex h-32 w-full items-center justify-center rounded border border-dashed border-white/10 bg-white/5 p-3">
+            <p className="text-center text-gray-400">
+              {post.featured_image ? "تم تحميل الصورة" : "ميزة تحميل الصورة قيد التطوير..."}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
