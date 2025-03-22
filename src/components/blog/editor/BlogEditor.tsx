@@ -52,6 +52,12 @@ interface IPostCreate {
   tag_ids?: string[];
 }
 
+interface ICategory {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 // BlogEditor props
 interface BlogEditorProps {
   initialPost?: Partial<IPost>;
@@ -86,13 +92,69 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
   // Function to generate a slug from a title with Arabic support
   const generateSlugFromTitle = (title: string): string => {
     if (!title) return "";
-    // توليد slug يدعم اللغة العربية
+    // Generate slug with Arabic support
     return title
       .trim()
       .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^\w\u0621-\u064A\-]+/g, "") // دعم الأحرف العربية
-      .replace(/\-\-+/g, "-");
+      .normalize('NFKD') // Normalize Arabic characters
+      .replace(/[^\p{L}\p{N}\s-]/gu, '') // Remove invalid characters
+      .replace(/[\s-]+/g, '-') // Replace spaces and multiple hyphens with single hyphen
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+  };
+
+  // Handle slug update
+  const handleUpdateSlug = async () => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        toast({
+          title: "خطأ في المصادقة",
+          description: "يرجى تسجيل الدخول مرة أخرى",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsSaving(true);
+
+      // Use custom slug or generate from title
+      const newSlug = post.slug || (post.title ? generateSlugFromTitle(post.title) : "");
+
+      // Validate slug
+      if (!newSlug || newSlug.length < 3) {
+        toast({
+          title: "رابط غير صالح",
+          description: "الرجاء إدخال رابط صالح (3 أحرف على الأقل)",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update slug via API
+      const updatedPost = await BlogService.updatePostSlug(
+        initialPost?.id || "",
+        newSlug,
+        token
+      );
+
+      // Update post state with new slug
+      setPost(prev => ({ ...prev, slug: updatedPost.slug }));
+
+      // Update URL in browser
+      if (location.pathname !== `/dashboard/blog/edit/${updatedPost.slug}`) {
+        navigate(`/dashboard/blog/edit/${updatedPost.slug}`, { replace: true });
+      }
+
+      toast({
+        title: "تم تحديث الرابط",
+        description: `تم تحديث رابط المقالة إلى: ${updatedPost.slug}`,
+      });
+    } catch (error) {
+      console.error("Error updating slug:", error);
+      handleApiError(error, toast);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Generate slug from title
@@ -357,49 +419,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
               <Button
                 type="button"
                 variant="outline"
-                onClick={async () => {
-                  try {
-                    const token = await getToken();
-                    if (!token) {
-                      toast({
-                        title: "خطأ في المصادقة",
-                        description: "يرجى تسجيل الدخول مرة أخرى",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-
-                    setIsSaving(true);
-                    
-                    // استخدام slug مخصص أو توليد من العنوان
-                    const newSlug = post.slug || (post.title ? generateSlugFromTitle(post.title) : "");
-                    
-                    // تحديث slug عبر API
-                    const updatedPost = await BlogService.updatePostSlug(
-                      initialPost?.slug || "", 
-                      newSlug, 
-                      token
-                    );
-                    
-                    // تحديث حالة المقالة بـ slug الجديد
-                    setPost(prev => ({ ...prev, slug: updatedPost.slug }));
-                    
-                    // تحديث الرابط في المتصفح
-                    if (location.pathname !== `/dashboard/blog/edit/${updatedPost.slug}`) {
-                      navigate(`/dashboard/blog/edit/${updatedPost.slug}`, { replace: true });
-                    }
-                    
-                    toast({
-                      title: "تم تحديث الرابط",
-                      description: `تم تحديث رابط المقالة إلى: ${updatedPost.slug}`,
-                    });
-                  } catch (error) {
-                    console.error("Error updating slug:", error);
-                    handleApiError(error, "فشل في تحديث رابط المقالة");
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }}
+                onClick={handleUpdateSlug}
                 disabled={isSaving}
                 className="whitespace-nowrap border-white/10 text-white hover:bg-white/10"
               >
@@ -512,7 +532,7 @@ const BlogEditor: React.FC<BlogEditorProps> = ({
         </div>
         
         <TagSelector 
-          availableTags={tags}
+          availableTags={tags} 
           selectedTags={post.tags?.map(tag => tag.id) || []}
           onChange={(selectedTagIds: string[]) => {
             const selectedTags = tags.filter(tag => selectedTagIds.includes(tag.id));
