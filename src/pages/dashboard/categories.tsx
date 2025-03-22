@@ -24,6 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import Link from "next/link";
+import { AlertDialog, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const CategoriesPage = () => {
   const [categories, setCategories] = useState<ICategory[]>([]);
@@ -125,7 +127,7 @@ const CategoriesPage = () => {
   // إضافة وظيفة لفتح نافذة تعديل slug
   const openSlugDialog = (category: ICategory) => {
     setCategoryToUpdateSlug(category);
-    setNewSlug(category.slug);
+    setNewSlug(category.slug ?? '');
     setSlugDialogOpen(true);
   };
 
@@ -137,7 +139,7 @@ const CategoriesPage = () => {
       setSlugUpdateLoading(true);
       const token = await getToken();
       const updatedCategory = await BlogService.updateCategorySlug(
-        categoryToUpdateSlug.slug || '', 
+        categoryToUpdateSlug.slug ?? '', 
         newSlug.trim(), 
         token
       );
@@ -233,8 +235,8 @@ const CategoriesPage = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-right text-white">الاسم</TableHead>
+                    <TableHead className="text-right text-white">الوصف</TableHead>
                     <TableHead className="text-right text-white">الرابط</TableHead>
-                    <TableHead className="text-right text-white">عدد المقالات</TableHead>
                     <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -245,33 +247,39 @@ const CategoriesPage = () => {
                         {category.name}
                       </TableCell>
                       <TableCell className="text-right text-gray-400">
-                        {category.slug}
+                        {category.description}
                       </TableCell>
                       <TableCell className="text-right text-gray-400">
-                        {category.posts_count || 0}
+                        {category.slug ?? ''}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-blue-500 hover:bg-blue-500/10 hover:text-blue-500"
-                            onClick={() => openSlugDialog(category)}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-link">
-                              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                            </svg>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-500 hover:bg-red-500/10 hover:text-red-500"
-                            onClick={() => openDeleteDialog(category)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                      <TableCell className="flex justify-end gap-4">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-blue-500 hover:bg-blue-500/10 hover:text-blue-500"
+                          onClick={() => openSlugDialog(category)}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-link">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                          </svg>
+                        </Button>
+                        <Link href={`/blog/category/${category.slug ?? ''}`}>
+                          <Button variant='outline'>View</Button>
+                        </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline">تعديل</Button>
+                          </AlertDialogTrigger>
+                        </AlertDialog>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-500 hover:bg-red-500/10 hover:text-red-500"
+                          onClick={() => openDeleteDialog(category)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

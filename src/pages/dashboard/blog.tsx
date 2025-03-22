@@ -261,7 +261,7 @@ const BlogPage: React.FC = () => {
                         variant="ghost"
                         size="icon"
                         className="text-gray-400 hover:text-white"
-                        onClick={() => handleViewPost(post.slug)}
+                        onClick={() => handleViewPost(post.slug ?? '')}
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
