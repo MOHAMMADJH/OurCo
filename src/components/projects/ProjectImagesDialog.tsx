@@ -7,12 +7,15 @@ import {
 } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
-import { Trash2, Upload, CheckCircle, XCircle, Image } from "lucide-react";
+import { Trash2, Upload, CheckCircle, XCircle, Image, AlertCircle } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { API_BASE_URL } from "@/lib/constants";
+import s3Service from "@/lib/s3-service";
+import { Switch } from "../ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 interface ProjectImagesDialogProps {
   open: boolean;
@@ -41,6 +44,8 @@ const ProjectImagesDialog = ({
   const [isPrimary, setIsPrimary] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [useDirectUpload, setUseDirectUpload] = useState(false);
+  const [fileSize, setFileSize] = useState<number>(0);
 
   useEffect(() => {
     if (open && projectId) {
@@ -79,7 +84,14 @@ const ProjectImagesDialog = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      setFileSize(file.size);
+      
+      // Automatically switch to direct upload for files larger than 5MB
+      if (file.size > 5 * 1024 * 1024) {
+        setUseDirectUpload(true);
+      }
     }
   };
 
@@ -90,29 +102,101 @@ const ProjectImagesDialog = ({
     try {
       setUploading(true);
       setUploadProgress(0);
+      setError(null);
       
       const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error('Authentication required. Please log in.');
       }
 
-      // Create form data
+      // Choose upload method based on file size or user preference
+      if (useDirectUpload) {
+        // Direct S3 upload
+        await handleDirectS3Upload();
+      } else {
+        // Traditional backend upload
+        await handleBackendUpload();
+      }
+
+      // Reset form
+      setSelectedFile(null);
+      setCaption("");
+      setIsPrimary(false);
+      setFileSize(0);
+      
+      // Reload images
+      fetchImages();
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      setError('حدث خطأ أثناء رفع الصورة');
+    } finally {
+      setUploading(false);
+      setTimeout(() => setUploadProgress(0), 1000);
+    }
+  };
+
+  const handleDirectS3Upload = async () => {
+    if (!selectedFile) return;
+    
+    try {
+      // Upload file directly to S3
+      const publicUrl = await s3Service.uploadFile(
+        selectedFile,
+        `projects/${projectId}/images`,
+        (progress) => setUploadProgress(progress)
+      );
+      
+      // After successful S3 upload, register the image with the backend
+      const token = localStorage.getItem('accessToken');
+      
+      // Create form data with just the metadata and S3 URL
       const formData = new FormData();
-      formData.append('image', selectedFile);
+      formData.append('s3_url', publicUrl);
       formData.append('caption', caption);
       formData.append('is_primary', isPrimary.toString());
+      
+      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/register_s3_image/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to register S3 image with backend');
+      }
+      
+      setUploadProgress(100);
+    } catch (error) {
+      console.error('Error in direct S3 upload:', error);
+      throw error;
+    }
+  };
 
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 300);
-
+  const handleBackendUpload = async () => {
+    if (!selectedFile) return;
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+    formData.append('caption', caption);
+    formData.append('is_primary', isPrimary.toString());
+    
+    // Simulate upload progress for backend upload
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 300);
+    
+    try {
+      const token = localStorage.getItem('accessToken');
+      
       const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/upload_image/`, {
         method: 'POST',
         headers: {
@@ -120,28 +204,17 @@ const ProjectImagesDialog = ({
         },
         body: formData,
       });
-
+      
       clearInterval(progressInterval);
       setUploadProgress(100);
-
+      
       if (!response.ok) {
         throw new Error('Failed to upload image');
       }
-
-      // Reset form
-      setSelectedFile(null);
-      setCaption("");
-      setIsPrimary(false);
-      
-      // Reload images
-      fetchImages();
-      setError(null);
-    } catch (err) {
-      console.error('Error uploading image:', err);
-      setError('حدث خطأ أثناء رفع الصورة');
-    } finally {
-      setUploading(false);
-      setTimeout(() => setUploadProgress(0), 1000);
+    } catch (error) {
+      clearInterval(progressInterval);
+      console.error('Error in backend upload:', error);
+      throw error;
     }
   };
 
@@ -368,6 +441,34 @@ const ProjectImagesDialog = ({
                     </div>
                   </div>
 
+                  {selectedFile && (
+                    <div className="flex items-center justify-between gap-2 p-2 bg-blue-900/20 rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="direct-upload"
+                          checked={useDirectUpload}
+                          onCheckedChange={setUseDirectUpload}
+                          disabled={fileSize > 5 * 1024 * 1024}
+                        />
+                        <Label htmlFor="direct-upload" className="cursor-pointer">
+                          الرفع المباشر إلى S3
+                        </Label>
+                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="cursor-help">
+                              <AlertCircle className="h-4 w-4 text-blue-400" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-[#0B1340] border-white/10 text-white">
+                            <p>الرفع المباشر مناسب للملفات الكبيرة (أكبر من 5 ميجابايت)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label>وصف الصورة</Label>
                     <Textarea
@@ -394,7 +495,7 @@ const ProjectImagesDialog = ({
                   {uploadProgress > 0 && (
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs">
-                        <span>جاري الرفع...</span>
+                        <span>جاري الرفع{useDirectUpload ? ' المباشر إلى S3' : ''}...</span>
                         <span>{uploadProgress}%</span>
                       </div>
                       <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
@@ -419,7 +520,7 @@ const ProjectImagesDialog = ({
                     ) : (
                       <>
                         <Upload className="h-4 w-4 mr-2" />
-                        رفع الصورة
+                        رفع الصورة{useDirectUpload ? ' مباشرة إلى S3' : ''}
                       </>
                     )}
                   </Button>
