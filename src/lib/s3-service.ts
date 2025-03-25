@@ -1,5 +1,8 @@
 import { API_BASE_URL } from './constants';
 
+// Size threshold for automatic direct upload (300KB)
+export const S3_UPLOAD_SIZE_THRESHOLD = 300 * 1024;
+
 /**
  * S3 Service for handling direct uploads to Wasabi S3
  * Provides functionality to get presigned URLs and upload files directly to S3
@@ -16,6 +19,14 @@ export interface PresignedUrlRequest {
 }
 
 const s3Service = {
+  /**
+   * Determines if a file should be uploaded directly to S3 based on its size
+   * @param fileSize Size of the file in bytes
+   * @returns Boolean indicating if direct upload should be used
+   */
+  shouldUseDirectUpload(fileSize: number): boolean {
+    return fileSize > S3_UPLOAD_SIZE_THRESHOLD;
+  },
   /**
    * Get a presigned URL for direct upload to S3
    * @param fileData Information about the file to upload
@@ -61,7 +72,38 @@ const s3Service = {
     onProgress?: (progress: number) => void
   ): Promise<void> {
     try {
-      // Create a new XMLHttpRequest to track upload progress
+      // Try using fetch with CORS proxy first
+      if (file.size <= 50 * 1024 * 1024) { // Only use fetch for files up to 50MB
+        try {
+          const corsProxyUrl = "https://corsproxy.io/?";
+          const proxyPresignedUrl = corsProxyUrl + encodeURIComponent(presignedUrl);
+          
+          // Update progress to show we're starting
+          if (onProgress) onProgress(10);
+          
+          const response = await fetch(proxyPresignedUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': file.type,
+              'x-amz-acl': 'public-read'
+            },
+            body: file
+          });
+          
+          // Update progress to complete
+          if (onProgress) onProgress(100);
+          
+          if (response.ok) {
+            return;
+          }
+          throw new Error(`Upload failed with status ${response.status}`);
+        } catch (fetchError) {
+          console.warn('CORS proxy upload failed, falling back to XHR:', fetchError);
+          // Fall back to XHR method if fetch fails
+        }
+      }
+      
+      // Fallback to XHR method (original implementation)
       const xhr = new XMLHttpRequest();
       
       // Set up progress tracking
@@ -78,6 +120,7 @@ const s3Service = {
       return new Promise((resolve, reject) => {
         xhr.open('PUT', presignedUrl, true);
         xhr.setRequestHeader('Content-Type', file.type);
+        xhr.setRequestHeader('x-amz-acl', 'public-read');
         
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {

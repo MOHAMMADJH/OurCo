@@ -7,8 +7,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { AlertCircle, Upload } from "lucide-react";
 import s3Service from "@/lib/s3-service";
 
-// Size threshold for automatic direct upload (5MB)
-const DIRECT_UPLOAD_THRESHOLD = 5 * 1024 * 1024;
+// Import the threshold from s3-service
+import { S3_UPLOAD_SIZE_THRESHOLD } from "@/lib/s3-service";
 
 interface S3FileUploaderProps {
   onUploadComplete: (fileUrl: string) => void;
@@ -52,7 +52,7 @@ const S3FileUploader: React.FC<S3FileUploaderProps> = ({
       setSelectedFile(file);
       
       // Automatically use direct upload for large files
-      if (file.size > DIRECT_UPLOAD_THRESHOLD) {
+      if (s3Service.shouldUseDirectUpload(file.size)) {
         setUseDirectUpload(true);
       }
     }
@@ -179,7 +179,7 @@ const S3FileUploader: React.FC<S3FileUploaderProps> = ({
               id="direct-upload-toggle"
               checked={useDirectUpload}
               onCheckedChange={setUseDirectUpload}
-              disabled={selectedFile.size > DIRECT_UPLOAD_THRESHOLD}
+              disabled={s3Service.shouldUseDirectUpload(selectedFile.size)}
             />
             <Label htmlFor="direct-upload-toggle" className="cursor-pointer text-sm">
               الرفع المباشر إلى S3
@@ -193,7 +193,7 @@ const S3FileUploader: React.FC<S3FileUploaderProps> = ({
                 </div>
               </TooltipTrigger>
               <TooltipContent className="bg-[#0B1340] border-white/10 text-white">
-                <p>الرفع المباشر مناسب للملفات الكبيرة (أكبر من 5 ميجابايت)</p>
+                <p>الرفع المباشر مناسب للملفات الكبيرة (أكبر من 300 كيلوبايت)</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

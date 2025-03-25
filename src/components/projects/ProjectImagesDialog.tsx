@@ -88,8 +88,8 @@ const ProjectImagesDialog = ({
       setSelectedFile(file);
       setFileSize(file.size);
       
-      // Automatically switch to direct upload for files larger than 5MB
-      if (file.size > 5 * 1024 * 1024) {
+      // Automatically switch to direct upload for files larger than 300KB
+      if (s3Service.shouldUseDirectUpload(file.size)) {
         setUseDirectUpload(true);
       }
     }
