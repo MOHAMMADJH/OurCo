@@ -502,7 +502,7 @@ const ProjectImagesDialog = ({
                               id="direct_upload"
                               checked={useDirectUpload}
                               onCheckedChange={setUseDirectUpload}
-                              disabled={selectedFile && s3Service.shouldUseDirectUpload(selectedFile.size)}
+                              disabled={!!selectedFile && s3Service.shouldUseDirectUpload(selectedFile.size)}
                             />
                             <Label htmlFor="direct_upload" className="mr-2 rtl:mr-0 rtl:ml-2">
                               رفع مباشر إلى التخزين

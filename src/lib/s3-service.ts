@@ -139,21 +139,21 @@ const s3Service = {
 
       // Simulate progress for server upload
       let progressInterval: number | null = null;
+      let uploadProgress = 10;
       if (onProgress) {
-        onProgress(10); // Start with 10%
+        onProgress(uploadProgress); // Start with 10%
         progressInterval = window.setInterval(() => {
-          onProgress((prev) => {
-            if (prev >= 90) {
-              if (progressInterval) clearInterval(progressInterval);
-              return 90;
-            }
-            return prev + 5;
-          });
+          const newProgress = Math.min(90, uploadProgress + 5);
+          onProgress(newProgress);
+          uploadProgress = newProgress;
+          if (newProgress >= 90) {
+            if (progressInterval) clearInterval(progressInterval);
+          }
         }, 500);
       }
 
       // Send to server
-      const response = await fetch(`${API_BASE_URL}/api/s3/upload-to-s3/`, {
+      const response = await fetch(`${API_BASE_URL}/api/s3/upload/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
