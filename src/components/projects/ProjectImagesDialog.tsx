@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +46,7 @@ const ProjectImagesDialog = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [useDirectUpload, setUseDirectUpload] = useState(false);
   const [fileSize, setFileSize] = useState<number>(0);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open && projectId) {
@@ -92,6 +93,12 @@ const ProjectImagesDialog = ({
       if (s3Service.shouldUseDirectUpload(file.size)) {
         setUseDirectUpload(true);
       }
+    }
+  };
+
+  const openFileSelector = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
@@ -428,7 +435,8 @@ const ProjectImagesDialog = ({
                         selectedFile
                           ? "border-green-500/50 bg-green-500/10"
                           : "border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30"
-                      } transition-colors duration-200`}
+                      } transition-colors duration-200 cursor-pointer`}
+                      onClick={openFileSelector}
                     >
                       {selectedFile ? (
                         <div className="flex flex-col items-center">
@@ -443,7 +451,10 @@ const ProjectImagesDialog = ({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => setSelectedFile(null)}
+                            onClick={(e) => {
+                              e.stopPropagation(); // منع انتشار الحدث للأب
+                              setSelectedFile(null);
+                            }}
                             className="mt-2 text-xs"
                           >
                             <XCircle className="h-3 w-3 mr-1" />
@@ -467,6 +478,7 @@ const ProjectImagesDialog = ({
                         accept="image/*"
                         className="hidden"
                         onChange={handleFileChange}
+                        ref={fileInputRef}
                       />
                     </div>
                   </div>
