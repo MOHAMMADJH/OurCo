@@ -10,6 +10,7 @@ export const S3_UPLOAD_SIZE_THRESHOLD = 300 * 1024;
 export interface PresignedUrlResponse {
   presigned_url: string;
   public_url: string;
+  file_key: string;
 }
 
 export interface PresignedUrlRequest {
@@ -72,38 +73,7 @@ const s3Service = {
     onProgress?: (progress: number) => void
   ): Promise<void> {
     try {
-      // Try using fetch with CORS proxy first
-      if (file.size <= 50 * 1024 * 1024) { // Only use fetch for files up to 50MB
-        try {
-          const corsProxyUrl = "https://corsproxy.io/?";
-          const proxyPresignedUrl = corsProxyUrl + encodeURIComponent(presignedUrl);
-          
-          // Update progress to show we're starting
-          if (onProgress) onProgress(10);
-          
-          const response = await fetch(proxyPresignedUrl, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': file.type,
-              'x-amz-acl': 'public-read'
-            },
-            body: file
-          });
-          
-          // Update progress to complete
-          if (onProgress) onProgress(100);
-          
-          if (response.ok) {
-            return;
-          }
-          throw new Error(`Upload failed with status ${response.status}`);
-        } catch (fetchError) {
-          console.warn('CORS proxy upload failed, falling back to XHR:', fetchError);
-          // Fall back to XHR method if fetch fails
-        }
-      }
-      
-      // Fallback to XHR method (original implementation)
+      // Use XHR for better cross-browser compatibility and progress tracking
       const xhr = new XMLHttpRequest();
       
       // Set up progress tracking
@@ -120,13 +90,12 @@ const s3Service = {
       return new Promise((resolve, reject) => {
         xhr.open('PUT', presignedUrl, true);
         xhr.setRequestHeader('Content-Type', file.type);
-        xhr.setRequestHeader('x-amz-acl', 'public-read');
         
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve();
           } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+            reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`));
           }
         };
         
@@ -143,7 +112,81 @@ const s3Service = {
   },
 
   /**
+   * Upload a file to the server, which will then upload it to S3
+   * This is a fallback method when direct upload fails
+   * @param file File to upload
+   * @param folder Optional folder path within the S3 bucket
+   * @param onProgress Optional callback for upload progress
+   * @returns Public URL of the uploaded file
+   */
+  async uploadViaServer(
+    file: File,
+    folder?: string,
+    onProgress?: (progress: number) => void
+  ): Promise<string> {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication required. Please log in.');
+      }
+
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', file);
+      if (folder) {
+        formData.append('folder', folder);
+      }
+
+      // Simulate progress for server upload
+      let progressInterval: number | null = null;
+      if (onProgress) {
+        onProgress(10); // Start with 10%
+        progressInterval = window.setInterval(() => {
+          onProgress((prev) => {
+            if (prev >= 90) {
+              if (progressInterval) clearInterval(progressInterval);
+              return 90;
+            }
+            return prev + 5;
+          });
+        }, 500);
+      }
+
+      // Send to server
+      const response = await fetch(`${API_BASE_URL}/api/s3/upload-to-s3/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      // Clear interval if it exists
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+
+      if (!response.ok) {
+        throw new Error('Server-side S3 upload failed');
+      }
+
+      const result = await response.json();
+      
+      // Complete progress
+      if (onProgress) {
+        onProgress(100);
+      }
+
+      return result.public_url;
+    } catch (error) {
+      console.error('Error in server upload:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Complete upload process: get presigned URL and upload file to S3
+   * Falls back to server upload if direct upload fails
    * @param file File to upload
    * @param folder Optional folder path within the S3 bucket
    * @param onProgress Optional callback for upload progress
@@ -156,17 +199,23 @@ const s3Service = {
   ): Promise<string> {
     try {
       // Step 1: Get presigned URL
-      const { presigned_url, public_url } = await this.getPresignedUrl({
+      const { presigned_url, public_url, file_key } = await this.getPresignedUrl({
         file_name: file.name,
         file_type: file.type,
         folder
       });
       
-      // Step 2: Upload file directly to S3
-      await this.uploadToS3(file, presigned_url, onProgress);
-      
-      // Return the public URL where the file can be accessed
-      return public_url;
+      // Step 2: Try direct S3 upload
+      try {
+        await this.uploadToS3(file, presigned_url, onProgress);
+        return public_url;
+      } catch (directUploadError) {
+        console.warn('Direct S3 upload failed, falling back to server upload:', directUploadError);
+        
+        // If direct upload fails, try server upload as fallback
+        if (onProgress) onProgress(0); // Reset progress
+        return await this.uploadViaServer(file, folder, onProgress);
+      }
     } catch (error) {
       console.error('Error in complete upload process:', error);
       throw error;

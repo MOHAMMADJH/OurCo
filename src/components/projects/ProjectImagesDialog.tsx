@@ -164,12 +164,13 @@ const ProjectImagesDialog = ({
       });
       
       if (!response.ok) {
-        throw new Error('Failed to register S3 image with backend');
+        throw new Error('فشل تسجيل الصورة مع الخادم بعد الرفع إلى التخزين');
       }
       
       setUploadProgress(100);
     } catch (error) {
       console.error('Error in direct S3 upload:', error);
+      setError('حدث خطأ أثناء رفع الصورة: ' + (error instanceof Error ? error.message : 'خطأ غير معروف'));
       throw error;
     }
   };
@@ -326,8 +327,8 @@ const ProjectImagesDialog = ({
 
         {error && (
           <div className="rounded-lg bg-red-500/10 p-4 text-red-500 mb-4">
-          {error}
-        </div>
+            {error}
+          </div>
         )}
 
         <div className="grid gap-6 lg:grid-cols-[1fr_300px] md:grid-cols-1">
@@ -419,110 +420,133 @@ const ProjectImagesDialog = ({
               <CardContent className="p-4 sm:p-5">
                 <form onSubmit={handleUpload} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>اختر صورة</Label>
-                    <div className="relative border-2 border-dashed border-white/20 rounded-md p-4 text-center hover:bg-white/5 transition cursor-pointer">
-                      <input
-                        type="file"
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        disabled={uploading}
-                      />
-                      <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                    <Label htmlFor="image" className="block mb-2">
+                      اختر صورة
+                    </Label>
+                    <div
+                      className={`border-2 border-dashed rounded-md p-4 text-center ${
+                        selectedFile
+                          ? "border-green-500/50 bg-green-500/10"
+                          : "border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30"
+                      } transition-colors duration-200`}
+                    >
                       {selectedFile ? (
-                        <p className="text-sm text-white">
-                          {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)
-                        </p>
+                        <div className="flex flex-col items-center">
+                          <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
+                          <p className="text-sm font-medium text-green-500">
+                            {selectedFile.name}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {(selectedFile.size / 1024).toFixed(1)} كيلوبايت
+                          </p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedFile(null)}
+                            className="mt-2 text-xs"
+                          >
+                            <XCircle className="h-3 w-3 mr-1" />
+                            إزالة
+                          </Button>
+                        </div>
                       ) : (
-                        <p className="text-sm text-gray-400">
-                          اضغط هنا لرفع صورة أو اسحب الصورة إلى هنا
-                        </p>
+                        <div className="flex flex-col items-center">
+                          <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                          <p className="text-sm text-gray-400">
+                            اضغط هنا لاختيار صورة أو اسحب وأفلت
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            JPG, PNG, GIF حتى 5 ميجابايت
+                          </p>
+                        </div>
                       )}
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
                     </div>
                   </div>
 
-                  {selectedFile && (
-                    <div className="flex items-center justify-between gap-2 p-2 bg-blue-900/20 rounded-md">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          id="direct-upload"
-                          checked={useDirectUpload}
-                          onCheckedChange={setUseDirectUpload}
-                          disabled={fileSize > 5 * 1024 * 1024}
-                        />
-                        <Label htmlFor="direct-upload" className="cursor-pointer">
-                          الرفع المباشر إلى S3
-                        </Label>
-                      </div>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="cursor-help">
-                              <AlertCircle className="h-4 w-4 text-blue-400" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-[#0B1340] border-white/10 text-white">
-                            <p>الرفع المباشر مناسب للملفات الكبيرة (أكبر من 5 ميجابايت)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label>وصف الصورة</Label>
+                  <div>
+                    <Label htmlFor="caption" className="block mb-2">
+                      وصف الصورة
+                    </Label>
                     <Textarea
+                      id="caption"
+                      placeholder="أدخل وصفًا للصورة..."
                       value={caption}
                       onChange={(e) => setCaption(e.target.value)}
-                      placeholder="وصف مختصر للصورة..."
-                      className="min-h-[60px] border-white/10 bg-white/5 text-right text-white"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
                     />
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="isPrimary"
+                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <Switch
+                      id="is_primary"
                       checked={isPrimary}
-                      onChange={(e) => setIsPrimary(e.target.checked)}
-                      className="rounded text-[#FF6B00] focus:ring-[#FF6B00]"
+                      onCheckedChange={setIsPrimary}
                     />
-                    <Label htmlFor="isPrimary" className="cursor-pointer">
-                      تعيين كصورة رئيسية
-                    </Label>
+                    <Label htmlFor="is_primary">تعيين كصورة رئيسية</Label>
                   </div>
 
-                  {uploadProgress > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span>جاري الرفع{useDirectUpload ? ' المباشر إلى S3' : ''}...</span>
-                        <span>{uploadProgress}%</span>
+                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center">
+                            <Switch
+                              id="direct_upload"
+                              checked={useDirectUpload}
+                              onCheckedChange={setUseDirectUpload}
+                              disabled={selectedFile && s3Service.shouldUseDirectUpload(selectedFile.size)}
+                            />
+                            <Label htmlFor="direct_upload" className="mr-2 rtl:mr-0 rtl:ml-2">
+                              رفع مباشر إلى التخزين
+                            </Label>
+                            <AlertCircle className="h-4 w-4 text-gray-400" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs text-sm">
+                            الرفع المباشر أسرع للملفات الكبيرة ولكنه قد يفشل بسبب قيود CORS.
+                            {selectedFile && s3Service.shouldUseDirectUpload(selectedFile.size) && 
+                              " هذا الملف كبير وسيتم استخدام الرفع المباشر تلقائيًا."}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+
+                  {uploading && (
+                    <div className="mt-4">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-400">جارٍ الرفع...</span>
+                        <span className="text-sm text-gray-400">{uploadProgress}%</span>
                       </div>
-                      <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                      <div className="w-full bg-white/10 rounded-full h-2.5">
                         <div
-                          className="h-full bg-[#FF6B00]"
+                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
                           style={{ width: `${uploadProgress}%` }}
                         ></div>
                       </div>
+                      <p className="text-xs text-gray-500 mt-1 text-center">
+                        {uploadProgress < 100 
+                          ? "يرجى الانتظار حتى اكتمال الرفع..."
+                          : "اكتمل الرفع! جارٍ معالجة الصورة..."}
+                      </p>
                     </div>
                   )}
 
                   <Button
                     type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white transition-colors duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed mt-2"
+                    className="w-full bg-blue-600 hover:bg-blue-700"
                     disabled={!selectedFile || uploading}
                   >
-                    {uploading ? (
-                      <>
-                        <span className="mr-2">جاري الرفع...</span>
-                        <Skeleton className="h-4 w-4 rounded-full animate-spin" />
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        رفع الصورة{useDirectUpload ? ' مباشرة إلى S3' : ''}
-                      </>
-                    )}
+                    {uploading ? "جارٍ الرفع..." : "رفع الصورة"}
                   </Button>
                 </form>
               </CardContent>
