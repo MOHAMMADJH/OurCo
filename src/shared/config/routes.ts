@@ -1,5 +1,5 @@
 // Example route config for shared usage
-const routes = {
+export const ROUTES = {
   home: '/',
   projects: '/projects',
   dashboard: '/dashboard',
@@ -8,4 +8,4 @@ const routes = {
   // Add other shared routes here
 };
 
-export default routes;
+export default ROUTES;
