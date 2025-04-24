@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://mohjaspy.pythonanywhere.com';
+import { API_BASE_URL } from './constants';
 
 interface User {
   id: number | string; // Allow both number and string for compatibility
