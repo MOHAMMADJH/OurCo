@@ -5,36 +5,7 @@ import Navbar from '@/components/navigation/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import projectService from '@/lib/project-service';
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  client: {
-    id: string;
-    name: string;
-  };
-  status: "active" | "completed" | "pending";
-  deadline: string;
-  budget: number;
-  progress: number;
-  images: Array<{
-    id: string;
-    image: string;
-    caption?: string;
-    is_primary: boolean;
-    uploaded_at: string;
-  }>;
-  created_at: string;
-  updated_at: string;
-  // Additional properties for UI display
-  start_date?: string;
-  end_date?: string;
-  technologies?: string[];
-  image_url?: string;
-  live_url?: string;
-  github_url?: string;
-}
+import { Project } from '@/entities/project/model/types';
 
 const ProjectDetailPage = () => {
   const { id } = useParams();

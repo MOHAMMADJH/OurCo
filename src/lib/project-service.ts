@@ -1,5 +1,6 @@
 import { API_BASE_URL } from './constants';
 import { authService } from './auth-service';
+import { Project } from '@/entities/project/model/types';
 
 export interface ProjectImage {
   id: string;
@@ -7,23 +8,6 @@ export interface ProjectImage {
   caption?: string;
   is_primary: boolean;
   uploaded_at: string;
-}
-
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  status: "active" | "completed" | "pending";
-  deadline: string;
-  budget: number;
-  progress: number;
-  client: {
-    id: string;
-    name: string;
-  };
-  images: ProjectImage[];
-  created_at: string;
-  updated_at: string;
 }
 
 export interface ProjectFormData {
