@@ -27,6 +27,9 @@ import projectService from "@/lib/project-service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
+import { Project, ProjectStatus } from "@/entities/project/model/types";
+import { apiProjectToEntity } from "@/types";
+import { getStatusColor, getStatusText } from "@/components/features/projects";
 
 interface ProjectImage {
   id: string;
@@ -41,49 +44,6 @@ interface Client {
   type: "company" | "individual";
   status: "active" | "inactive";
 }
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  status: "active" | "completed" | "pending";
-  deadline: string;
-  budget: number;
-  progress: number;
-  client: {
-    id: string;
-    name: string;
-  };
-  images: ProjectImage[];
-  created_at: string;
-  updated_at: string;
-}
-
-const getStatusColor = (status: Project["status"]) => {
-  switch (status) {
-    case "active":
-      return "bg-green-500/10 text-green-500";
-    case "completed":
-      return "bg-blue-500/10 text-blue-500";
-    case "pending":
-      return "bg-yellow-500/10 text-yellow-500";
-    default:
-      return "bg-gray-500/10 text-gray-500";
-  }
-};
-
-const getStatusText = (status: Project["status"]) => {
-  switch (status) {
-    case "active":
-      return "نشط";
-    case "completed":
-      return "مكتمل";
-    case "pending":
-      return "قيد الانتظار";
-    default:
-      return status;
-  }
-};
 
 const formatCurrency = (amount: number) => {
   if (amount === undefined || amount === null) {
@@ -133,7 +93,8 @@ const ProjectsPage = () => {
           setError('لا توجد مشاريع متاحة حالياً');
         }
       } else {
-        setProjects(data);
+        const entityProjects = data.map(apiProjectToEntity);
+        setProjects(entityProjects);
         setError(null);
       }
     } catch (err) {
