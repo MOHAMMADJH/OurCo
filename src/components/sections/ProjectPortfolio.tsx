@@ -1,26 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import projectService from "../../lib/project-service";
+import { Project as EntityProject } from "@/entities/project/model/types";
+import { APIProject } from "@/types";
 
 // استيراد الصورة الافتراضية مباشرة
 import DEFAULT_PROJECT_IMAGE_URL from "../../assets/images/project-default.png";
 
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl?: string;
-}
-
 interface ProjectPortfolioProps {
-  projects?: Project[];
+  projects?: EntityProject[];
 }
 
 // تعريف ثابت للصورة الافتراضية
 const DEFAULT_PROJECT_IMAGE = "/images/project-default.png";
 
 const ProjectPortfolio = ({ projects: propProjects }: ProjectPortfolioProps) => {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<EntityProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
@@ -44,18 +39,7 @@ const ProjectPortfolio = ({ projects: propProjects }: ProjectPortfolioProps) => 
           console.log("No projects returned, possibly due to authentication issues");
         }
         
-        // Map API projects to the format needed by this component
-        const mappedProjects = fetchedProjects.map(project => ({
-          id: project.id,
-          title: project.title,
-          description: project.description,
-          // استخدام صورة المشروع إذا كانت متوفرة، وإلا استخدام الصورة الافتراضية
-          imageUrl: project.images && project.images.length > 0 && project.images[0].image
-            ? project.images.find(img => img.is_primary)?.image || project.images[0].image
-            : DEFAULT_PROJECT_IMAGE
-        }));
-        
-        setProjects(mappedProjects);
+        setProjects(fetchedProjects);
         setError(null);
       } catch (err) {
         console.error("Error fetching projects:", err);
@@ -123,7 +107,7 @@ const ProjectPortfolio = ({ projects: propProjects }: ProjectPortfolioProps) => 
               >
                 <div className="mb-4 h-40 w-full overflow-hidden rounded-lg bg-[#0B1340]">
                   <img
-                    src={isImageBroken(project.id) ? DEFAULT_PROJECT_IMAGE : project.imageUrl || DEFAULT_PROJECT_IMAGE}
+                    src={isImageBroken(project.id) ? DEFAULT_PROJECT_IMAGE : project.image || DEFAULT_PROJECT_IMAGE}
                     alt={project.title}
                     className="h-full w-full object-cover"
                     onError={() => handleImageError(project.id)}

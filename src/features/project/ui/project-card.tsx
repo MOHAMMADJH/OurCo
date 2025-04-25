@@ -21,6 +21,26 @@ interface ProjectCardProps {
 }
 
 /**
+ * Get badge color based on project status
+ */
+function getStatusColor(status: ProjectStatus) {
+  switch (status) {
+    case ProjectStatus.PLANNING:
+      return 'bg-blue-200 text-blue-800';
+    case ProjectStatus.IN_PROGRESS:
+      return 'bg-orange-200 text-orange-800';
+    case ProjectStatus.COMPLETED:
+      return 'bg-green-200 text-green-800';
+    case ProjectStatus.ON_HOLD:
+      return 'bg-yellow-200 text-yellow-800';
+    case ProjectStatus.CANCELLED:
+      return 'bg-red-200 text-red-800';
+    default:
+      return 'bg-gray-200 text-gray-800';
+  }
+}
+
+/**
  * ProjectCard component
  * Displays a project in a card format
  */
@@ -48,127 +68,81 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   // Format dates
   const formattedStartDate = startDate ? format(new Date(startDate), 'MMM d, yyyy') : 'Not set';
   const formattedEndDate = endDate ? format(new Date(endDate), 'MMM d, yyyy') : 'Not set';
-  
-  // Generate project URL
-  const projectUrl = `${ROUTES.DASHBOARD_PROJECTS}/${id}`;
-  
-  // Get status badge color
-  const getStatusColor = () => {
-    switch (status) {
-      case ProjectStatus.PLANNING:
-        return 'bg-blue-100 text-blue-800';
-      case ProjectStatus.IN_PROGRESS:
-        return 'bg-yellow-100 text-yellow-800';
-      case ProjectStatus.COMPLETED:
-        return 'bg-green-100 text-green-800';
-      case ProjectStatus.ON_HOLD:
-        return 'bg-orange-100 text-orange-800';
-      case ProjectStatus.CANCELLED:
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
+  // Status display
+  const statusText = status.toString().replace('_', ' ');
+  const statusColor = getStatusColor(status);
+  
   return (
-    <Card 
-      className={cn(
-        "overflow-hidden transition-all duration-200 hover:shadow-md h-full flex flex-col",
-        className
-      )}
-    >
-      {/* Project Image */}
-      {image && !isCompact && (
-        <div className="aspect-video overflow-hidden">
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-      
-      {/* Card Header */}
-      <CardHeader className={cn(isCompact && "p-4")}>
-        <div className="flex items-start justify-between">
+    <Card className={cn('overflow-hidden hover:shadow-lg transition-shadow', className)}>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
           <div>
-            <Link to={projectUrl} className="group">
-              <h3 className={cn(
-                "font-bold transition-colors group-hover:text-primary",
-                isDetailed ? "text-2xl" : "text-xl",
-                isCompact && "text-lg"
-              )}>
+            <h3 className="text-lg font-bold">
+              <Link to={`${ROUTES.DASHBOARD_PROJECTS}/${id}`} className="hover:text-blue-500 transition-colors">
                 {title}
-              </h3>
-            </Link>
-            <p className="text-sm text-muted-foreground mt-1">
-              {client.name}
-            </p>
+              </Link>
+            </h3>
+            <Badge className={statusColor}>{statusText}</Badge>
           </div>
-          
-          <span className={cn(
-            "px-2 py-1 rounded-full text-xs font-medium",
-            getStatusColor()
-          )}>
-            {status.replace('_', ' ')}
-          </span>
+          {progress !== undefined && !isCompact && (
+            <div className="text-sm font-medium">{progress}%</div>
+          )}
         </div>
       </CardHeader>
       
-      {/* Card Content */}
-      <CardContent className={cn(
-        "flex-1",
-        isCompact && "p-4 pt-0"
-      )}>
+      <CardContent className="pb-0">
         {!isCompact && (
-          <p className="text-muted-foreground line-clamp-3 mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">
             {description}
           </p>
         )}
         
-        {/* Progress bar */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium">Progress</span>
-            <span className="text-sm text-muted-foreground">{progress}%</span>
+        {progress !== undefined && !isCompact && (
+          <div className="space-y-1 mb-4">
+            <Progress value={progress} />
           </div>
-          <Progress value={progress} className="h-2" />
+        )}
+        
+        <div className="flex flex-col space-y-2">
+          {(startDate || endDate) && (
+            <div className="flex space-x-4 rtl:space-x-reverse text-sm">
+              {startDate && (
+                <div className="flex items-center">
+                  <Calendar className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                  <span>Start: {formattedStartDate}</span>
+                </div>
+              )}
+              {endDate && (
+                <div className="flex items-center">
+                  <Clock className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                  <span>Due: {formattedEndDate}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
-        {/* Project details */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground mb-1">Start Date</span>
-            <div className="flex items-center">
-              <Calendar className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-              <span className="text-sm">{formattedStartDate}</span>
-            </div>
-          </div>
-          
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground mb-1">End Date</span>
-            <div className="flex items-center">
-              <Calendar className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-              <span className="text-sm">{formattedEndDate}</span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Team members (only in detailed view) */}
         {isDetailed && team && team.length > 0 && (
           <div className="mt-4">
-            <span className="text-xs text-muted-foreground mb-2 block">Team Members</span>
-            <div className="flex -space-x-2">
+            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+              <Users className="h-3.5 w-3.5 text-gray-500" />
+              <span className="text-sm">Team ({team.length})</span>
+            </div>
+            <div className="flex -space-x-2 rtl:space-x-reverse mt-1">
               {team.slice(0, 5).map((member) => (
-                <Avatar key={member.id} className="h-8 w-8 border-2 border-background">
-                  <AvatarImage src={member.avatar} alt={member.name} />
-                  <AvatarFallback>
-                    {member.name.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
+                <Avatar key={member.id} className="border-2 border-white">
+                  {member.avatar ? (
+                    <AvatarImage src={member.avatar} alt={member.name} />
+                  ) : (
+                    <AvatarFallback>
+                      {member.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
               ))}
               {team.length > 5 && (
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted text-xs font-medium">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-100 text-xs font-medium">
                   +{team.length - 5}
                 </div>
               )}
@@ -177,30 +151,28 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         )}
       </CardContent>
       
-      {/* Card Footer */}
-      <CardFooter className={cn(
-        "mt-auto border-t pt-4",
-        isCompact && "p-4 pt-2"
-      )}>
-        <div className="flex items-center justify-between w-full">
+      <CardFooter className="pt-4">
+        <div className="flex justify-between w-full">
           <div className="flex items-center">
-            <Users className="h-4 w-4 text-muted-foreground mr-1" />
-            <span className="text-sm text-muted-foreground">
-              {team?.length || 0} members
-            </span>
+            <Avatar className="h-6 w-6 mr-2">
+              {client?.logo ? (
+                <AvatarImage src={client.logo} alt={client?.name || ''} />
+              ) : (
+                <AvatarFallback>{(client?.name?.substring(0, 2) || 'CL').toUpperCase()}</AvatarFallback>
+              )}
+            </Avatar>
+            <span className="text-xs">{client?.name}</span>
           </div>
           
-          <Button 
-            variant="outline" 
-            size="sm" 
-            asChild
-          >
-            <Link to={projectUrl}>
-              View Details
-            </Link>
-          </Button>
+          <Link to={`${ROUTES.DASHBOARD_PROJECTS}/${id}`}>
+            <Button variant="outline" className="h-7 px-2 text-xs">
+              View
+            </Button>
+          </Link>
         </div>
       </CardFooter>
     </Card>
   );
 };
+
+export default ProjectCard;

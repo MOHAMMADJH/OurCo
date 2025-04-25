@@ -115,3 +115,88 @@ export interface ProjectFormData {
   progress?: number; // Make progress optional
   client?: { id: string; name: string; } | string; // Remove number type
 }
+
+import { Project as EntityProject, Client as EntityClient, ProjectStatus, ProjectPriority } from '@/entities/project/model/types';
+
+// Legacy API interface for Project with snake_case properties
+export interface APIProject {
+  id: string;
+  title: string;
+  description: string;
+  status: "active" | "completed" | "pending";
+  deadline: string;
+  budget: number;
+  progress: number;
+  client: {
+    id: string;
+    name: string;
+  };
+  images: Array<{
+    id: string;
+    image: string;
+    caption?: string;
+    is_primary: boolean;
+    uploaded_at: string;
+  }>;
+  created_at: string;
+  updated_at: string;
+}
+
+// UI extension for Project with additional UI-specific properties
+export interface UIProject extends EntityProject {
+  image_url?: string;
+  live_url?: string;
+  github_url?: string;
+  technologies?: string[];
+  start_date?: string; // For legacy compatibility
+  end_date?: string;   // For legacy compatibility
+  created_at?: string; // For legacy compatibility
+  updated_at?: string; // For legacy compatibility
+  deadline?: string;   // For legacy compatibility
+  images?: Array<{
+    id: string;
+    image: string;
+    caption?: string;
+    is_primary: boolean;
+    uploaded_at: string;
+  }>;
+}
+
+// Helper functions to convert between API format and Entity format
+export function apiProjectToEntity(apiProject: APIProject): EntityProject {
+  return {
+    id: apiProject.id,
+    title: apiProject.title,
+    description: apiProject.description,
+    status: convertStatus(apiProject.status),
+    priority: ProjectPriority.MEDIUM, // Default value
+    progress: apiProject.progress,
+    startDate: apiProject.created_at,
+    endDate: apiProject.deadline,
+    budget: apiProject.budget,
+    client: {
+      id: apiProject.client.id,
+      name: apiProject.client.name,
+      email: '', // Required by EntityClient, using default
+      company: '', // Required by EntityClient, using default
+      createdAt: apiProject.created_at,
+      updatedAt: apiProject.updated_at
+    },
+    image: apiProject.images?.[0]?.image || '',
+    createdAt: apiProject.created_at,
+    updatedAt: apiProject.updated_at
+  };
+}
+
+// Convert legacy status to enum status
+export function convertStatus(status: string): ProjectStatus {
+  switch (status) {
+    case 'active':
+      return ProjectStatus.IN_PROGRESS;
+    case 'completed':
+      return ProjectStatus.COMPLETED;
+    case 'pending':
+    default:
+      return ProjectStatus.PLANNING;
+  }
+}

@@ -1,27 +1,50 @@
 import React from 'react';
 
-export const Avatar: React.FC<{ src: string; alt?: string; className?: string }> = ({ src, alt = '', className = '' }) => (
-  <img
-    src={src}
-    alt={alt}
-    className={`w-10 h-10 rounded-full object-cover border-2 border-white/10 ${className}`}
-    onError={e => (e.currentTarget.src = '/default-avatar.png')}
-  />
-);
+interface AvatarProps {
+  className?: string;
+  children?: React.ReactNode;
+}
 
-export const AvatarFallback: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <div className={`w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 ${className}`}>
-    ?
+interface AvatarImageProps {
+  src: string;
+  alt?: string;
+  className?: string;
+}
+
+interface AvatarFallbackProps {
+  className?: string;
+  children: React.ReactNode;
+}
+
+export const Avatar: React.FC<AvatarProps> = ({ 
+  className = '', 
+  children 
+}) => (
+  <div className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}>
+    {children}
   </div>
 );
 
-export const AvatarImage: React.FC<{ src: string; alt?: string; className?: string }> = ({ src, alt = '', className = '' }) => (
+export const AvatarImage: React.FC<AvatarImageProps> = ({ 
+  src, 
+  alt = '', 
+  className = '' 
+}) => (
   <img
     src={src}
     alt={alt}
-    className={`w-10 h-10 rounded-full object-cover border-2 border-white/10 ${className}`}
+    className={`h-full w-full object-cover ${className}`}
     onError={e => (e.currentTarget.src = '/default-avatar.png')}
   />
+);
+
+export const AvatarFallback: React.FC<AvatarFallbackProps> = ({ 
+  className = '', 
+  children 
+}) => (
+  <div className={`flex h-full w-full items-center justify-center rounded-full bg-gray-300 text-gray-600 ${className}`}>
+    {children}
+  </div>
 );
 
 export default Avatar;
