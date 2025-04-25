@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Project } from '@/components/features/projects';
+import { Project } from '@/entities/project/model/types';
+import { apiProjectToEntity } from '@/types';
 import projectService from '@/lib/project-service';
 import { getStatusColor, getStatusText } from '@/components/features/projects';
 import { Badge } from '@/components/ui/badge';
@@ -27,11 +28,11 @@ const ProjectList: React.FC<ProjectListProps> = ({
       try {
         setLoading(true);
         const data = await projectService.getProjects();
-        setProjects(limit ? data.slice(0, limit) : data);
+        setProjects(limit ? data.map(apiProjectToEntity).slice(0, limit) : data.map(apiProjectToEntity));
         setError(null);
       } catch (err) {
         setError('Failed to load projects');
-        console.error('Error loading projects:', err);
+        setProjects([]);
       } finally {
         setLoading(false);
       }
