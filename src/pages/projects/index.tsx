@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/hooks/useLanguage';
 import Navbar from '@/components/navigation/Navbar';
-import { Project } from '@/components/features/projects';
+import { Project } from '@/entities/project/model/types';
 import ProjectList from '@/components/projects/ProjectList';
 import ProjectDetailsDialog from '@/components/projects/ProjectDetailsDialog';
 import { motion } from 'framer-motion';
@@ -53,7 +53,7 @@ const ProjectsPage = () => {
 
       <footer className="bg-[#0A0F2F] py-8 text-center text-sm text-gray-500">
         <div className="container mx-auto">
-          <p>© {new Date().getFullYear()} OurCo. جميع الحقوق محفوظة</p>
+          <p> {new Date().getFullYear()} OurCo. جميع الحقوق محفوظة</p>
         </div>
       </footer>
     </div>
