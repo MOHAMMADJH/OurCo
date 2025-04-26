@@ -8,7 +8,7 @@ interface Project {
   id: string;
   title: string;
   description: string;
-  status: "active" | "completed" | "pending";
+  status: "in_progress" | "completed" | "pending";
   deadline: string;
   budget: number;
   progress: number;
@@ -28,7 +28,7 @@ interface ProjectDetailsDialogProps {
 
 const getStatusColor = (status: Project["status"]) => {
   switch (status) {
-    case "active":
+    case "in_progress":
       return "bg-green-500/10 text-green-500";
     case "completed":
       return "bg-blue-500/10 text-blue-500";
@@ -41,7 +41,7 @@ const getStatusColor = (status: Project["status"]) => {
 
 const getStatusText = (status: Project["status"]) => {
   switch (status) {
-    case "active":
+    case "in_progress":
       return "نشط";
     case "completed":
       return "مكتمل";

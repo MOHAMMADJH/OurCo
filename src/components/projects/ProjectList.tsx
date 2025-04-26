@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Project } from '@/components/features/projects';
+import { Project } from '@/entities/project/model/types';
+import { apiProjectToEntity } from '@/types';
 import projectService from '@/lib/project-service';
 import { getStatusColor, getStatusText } from '@/components/features/projects';
 import { Badge } from '@/components/ui/badge';
@@ -27,11 +28,11 @@ const ProjectList: React.FC<ProjectListProps> = ({
       try {
         setLoading(true);
         const data = await projectService.getProjects();
-        setProjects(limit ? data.slice(0, limit) : data);
+        setProjects(limit ? data.map(apiProjectToEntity).slice(0, limit) : data.map(apiProjectToEntity));
         setError(null);
       } catch (err) {
         setError('Failed to load projects');
-        console.error('Error loading projects:', err);
+        setProjects([]);
       } finally {
         setLoading(false);
       }
@@ -77,7 +78,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
           >
             <div className="h-48 w-full overflow-hidden bg-[#0B1340] relative">
               <img
-                src={project.image_url || `/images/projects/default.jpg`}
+                src={project.image || `/images/projects/default.jpg`}
                 alt={project.title}
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
@@ -104,13 +105,13 @@ const ProjectList: React.FC<ProjectListProps> = ({
                     </p>
                   )}
                 </div>
-                {project.deadline && (
+                {project.endDate && (
                   <div className="text-right bg-[#FF6B00]/15 rounded-lg px-3 py-2">
                     <div className="text-sm text-white/90 font-medium flex items-center justify-end">
                       <svg className="w-4 h-4 mr-2 text-[#FF6B00]/90" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
                       </svg>
-                      {new Date(project.deadline).toLocaleDateString()}
+                      {new Date(project.endDate).toLocaleDateString()}
                     </div>
                   </div>
                 )}

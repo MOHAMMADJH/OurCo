@@ -12,8 +12,10 @@ import { Mail, Phone, MapPin, Building2, Calendar } from "lucide-react";
 import { Client } from "@/lib/client-service";
 import clientService from "@/lib/client-service";
 import { Skeleton } from "@/components/ui/skeleton";
-import projectService, { Project } from "@/lib/project-service";
+import projectService from "@/lib/project-service";
 import { API_BASE_URL } from "@/lib/constants";
+import { Project } from '@/entities/project/model/types';
+import { apiProjectToEntity } from '@/types';
 
 interface ClientDetailsDialogProps {
   open: boolean;
@@ -67,74 +69,16 @@ const ClientDetailsDialog = ({
       try {
         // Fetch client details
         const clientData = await clientService.getClient(clientId);
-        console.log("Client data fetched:", clientData);
+        // Fetch projects for this client
+        const projectData = await projectService.getProjectsByClient(clientId);
         setClient(clientData);
-
-        // Fetch client projects using the projects API
-        console.log("Fetching projects for client ID:", clientId);
-        const projectsData = await clientService.getClientProjects(clientId);
-        console.log("Raw projects data:", projectsData);
-        
-        // Verify if projectsData is an array and has items
-        if (!Array.isArray(projectsData)) {
-          console.error("Projects data is not an array:", projectsData);
-          // Set empty projects instead of mock data
-          setProjects([]);
-          return;
-        }
-        
-        console.log("Number of projects fetched:", projectsData.length);
-        
-        // If no projects were returned, set empty projects
-        if (projectsData.length === 0) {
-          console.log("No projects returned from API");
-          setProjects([]);
-          return;
-        }
-        
-        // Format the projects data to match the Project interface
-        const formattedProjects = projectsData.map((project: any) => {
-          console.log("Processing project:", project);
-          
-          // Handle edge case where project data might be incomplete
-          if (!project || !project.id) {
-            console.error("Invalid project data:", project);
-            return null;
-          }
-          
-          return {
-            id: project.id,
-            title: project.title || "مشروع بدون عنوان",
-            description: project.description || '',
-            status: (project.status as "active" | "completed" | "pending") || "pending",
-            deadline: project.deadline || 'غير محدد',
-            budget: typeof project.budget === 'number' 
-              ? project.budget 
-              : parseFloat(project.budget) || 0,
-            progress: project.progress || 0,
-            client: {
-              id: clientId,
-              name: clientData.name
-            },
-            images: project.images || [],
-            created_at: project.created_at || '',
-            updated_at: project.updated_at || ''
-          };
-        }).filter(Boolean) as Project[]; // Filter out null values
-        
-        console.log("Formatted projects:", formattedProjects);
-        setProjects(formattedProjects);
-      } catch (err) {
-        console.error("Error fetching client details:", err);
-        setError("حدث خطأ أثناء تحميل بيانات العميل");
-        
-        // Set empty projects instead of mock data
-        setProjects([]);
-      } finally {
+        setProjects(Array.isArray(projectData) ? projectData.map(apiProjectToEntity) : []);
+        setLoading(false);
+      } catch (err: any) {
+        setError('Failed to load client details');
         setLoading(false);
       }
     };
-
     fetchData();
   }, [open, clientId]);
 
@@ -166,8 +110,6 @@ const ClientDetailsDialog = ({
   const formatBudget = (budget: number): string => {
     return `${budget.toLocaleString()} ر.س`;
   };
-
-  console.log("Current projects state:", projects);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

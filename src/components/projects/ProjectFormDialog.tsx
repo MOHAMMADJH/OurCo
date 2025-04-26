@@ -285,7 +285,7 @@ const ProjectFormDialog = ({
                 </SelectTrigger>
                 <SelectContent className="border-white/10 bg-[#0B1340] text-white">
                   <SelectItem value="pending">قيد الانتظار</SelectItem>
-                  <SelectItem value="active">نشط</SelectItem>
+                  <SelectItem value="in_progress">نشط</SelectItem>
                   <SelectItem value="completed">مكتمل</SelectItem>
                 </SelectContent>
               </Select>

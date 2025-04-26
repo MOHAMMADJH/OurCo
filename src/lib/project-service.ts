@@ -1,5 +1,7 @@
 import { API_BASE_URL } from './constants';
 import { authService } from './auth-service';
+import { Project as EntityProject } from '@/entities/project/model/types';
+import { APIProject, apiProjectToEntity } from '@/types';
 
 export interface ProjectImage {
   id: string;
@@ -7,23 +9,6 @@ export interface ProjectImage {
   caption?: string;
   is_primary: boolean;
   uploaded_at: string;
-}
-
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  status: "active" | "completed" | "pending";
-  deadline: string;
-  budget: number;
-  progress: number;
-  client: {
-    id: string;
-    name: string;
-  };
-  images: ProjectImage[];
-  created_at: string;
-  updated_at: string;
 }
 
 export interface ProjectFormData {
@@ -37,133 +22,64 @@ export interface ProjectFormData {
   client?: { id: string; name: string; } | string;
 }
 
-// Convert API project format to frontend project format
-const mapApiProjectToProject = (apiProject: any): Project => {
-  console.log("Raw API Project data:", apiProject);
-  
-  // Map client data properly
-  // Default client data to ensure it's never null
-  let clientData = {
-    id: '0',
-    name: 'عميل غير معروف'
-  };
-  
-  // Case 1: client_details is available (full client object from API)
-  if (apiProject.client_details) {
-    clientData = {
-      id: String(apiProject.client_details.id),
-      name: apiProject.client_details.name || 'عميل غير معروف'
-    };
-  }
-  // Case 2: client is a full object
-  else if (apiProject.client && typeof apiProject.client === 'object') {
-    clientData = {
-      id: String(apiProject.client.id),
-      name: apiProject.client.name || 'عميل غير معروف'
-    };
-  }
-  // Case 3: client is just an ID
-  else if (apiProject.client) {
-    clientData = {
-      id: String(apiProject.client),
-      name: apiProject.client_name || 'عميل معرف بالرقم'
-    };
-  }
-
-  // Format budget to always be a number with 2 decimal places
-  const budget = typeof apiProject.budget === 'number' 
-    ? parseFloat(apiProject.budget.toFixed(2)) 
-    : (apiProject.budget ? parseFloat(parseFloat(apiProject.budget).toFixed(2)) : 0);
-  
-  console.log("Mapping project from API:", {
-    originalBudget: apiProject.budget,
-    formattedBudget: budget,
-    originalClient: apiProject.client,
-    clientDetails: apiProject.client_details,
-    formattedClient: clientData
-  });
-
-  return {
-    id: apiProject.id,
-    title: apiProject.title,
-    description: apiProject.description,
-    status: apiProject.status,
-    deadline: apiProject.deadline,
-    budget: budget,
-    progress: apiProject.progress || 0,
-    client: clientData,
-    images: Array.isArray(apiProject.images) ? apiProject.images : [],
-    created_at: apiProject.created_at,
-    updated_at: apiProject.updated_at,
-  };
-};
+// Helper function to convert API response to Entity format
+function mapApiResponseToEntityProjects(apiProjects: APIProject[]): EntityProject[] {
+  return apiProjects.map(apiProjectToEntity);
+}
 
 const projectService = {
-  // Get all projects
-  async getProjects(): Promise<Project[]> {
+  /**
+   * Get all projects
+   */
+  async getProjects(): Promise<EntityProject[]> {
     try {
-      // تحقق من وجود توكن المصادقة
       const token = localStorage.getItem('accessToken');
       
-      // تحضير الهيدرز
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      };
-      
-      // إضافة توكن المصادقة إذا كان موجودًا
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      // إجراء الطلب باستخدام fetch API
-      const response = await fetch(`${API_BASE_URL}/api/projects/`, {
-        method: 'GET',
-        headers,
-        credentials: 'include'
-      });
-      
-      // التحقق من نجاح الطلب
-      if (response.ok) {
-        const data = await response.json();
-        return (data.results || []).map(mapApiProjectToProject);
-      }
-      
-      // معالجة حالة عدم المصادقة
-      if (response.status === 401) {
-        console.warn('Unauthenticated access to projects, public data only');
-        // إذا كان المستخدم غير مصادق، نعيد مصفوفة فارغة بدلاً من رمي خطأ
+      if (!token) {
+        console.warn('No authentication token found');
         return [];
       }
       
-      // معالجة أخطاء أخرى
-      console.error(`API Error: ${response.status} ${response.statusText}`);
-      return [];
+      const response = await fetch(`${API_BASE_URL}/api/projects/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching projects: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return mapApiResponseToEntityProjects(data.results || []);
     } catch (error) {
-      // معالجة أخطاء الشبكة أو أخطاء أخرى
       console.error('Error fetching projects:', error);
       return [];
     }
   },
-
-  // Get a single project by ID
-  async getProject(id: string): Promise<Project> {
+  
+  /**
+   * Get a project by ID
+   */
+  async getProject(id: string): Promise<APIProject> {
     try {
       const token = localStorage.getItem('accessToken');
+      
       if (!token) {
-        throw new Error('Authentication required. Please log in.');
+        throw new Error('No authentication token found');
       }
-
+      
       const response = await fetch(`${API_BASE_URL}/api/projects/${id}/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch project');
+        throw new Error(`Error fetching project: ${response.status}`);
       }
-      const data = await response.json();
-      return mapApiProjectToProject(data);
+      
+      return await response.json();
     } catch (error) {
       console.error('Error fetching project:', error);
       throw error;
@@ -171,7 +87,7 @@ const projectService = {
   },
 
   // Create a new project
-  async createProject(projectData: ProjectFormData): Promise<Project> {
+  async createProject(projectData: ProjectFormData): Promise<EntityProject> {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
@@ -207,7 +123,7 @@ const projectService = {
       }
 
       const data = await response.json();
-      return mapApiProjectToProject(data);
+      return apiProjectToEntity(data);
     } catch (error) {
       console.error('Error creating project:', error);
       throw error;
@@ -215,7 +131,7 @@ const projectService = {
   },
 
   // Update an existing project
-  async updateProject(id: string, projectData: Partial<ProjectFormData>): Promise<Project> {
+  async updateProject(id: string, projectData: Partial<ProjectFormData>): Promise<EntityProject> {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
@@ -247,7 +163,7 @@ const projectService = {
       }
 
       const data = await response.json();
-      return mapApiProjectToProject(data);
+      return apiProjectToEntity(data);
     } catch (error) {
       console.error('Error updating project:', error);
       throw error;
@@ -280,7 +196,7 @@ const projectService = {
   },
 
   // Update project progress
-  async updateProgress(id: string, progress: number, note?: string): Promise<Project> {
+  async updateProgress(id: string, progress: number, note?: string): Promise<EntityProject> {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
@@ -305,7 +221,7 @@ const projectService = {
       }
 
       const data = await response.json();
-      return mapApiProjectToProject(data);
+      return apiProjectToEntity(data);
     } catch (error) {
       console.error('Error updating project progress:', error);
       throw error;

@@ -1,5 +1,5 @@
 // API constants
-export const API_BASE_URL = 'https://mihwaralarab-1072625241731.me-central1.run.app'; // Updated URL
+export const API_BASE_URL = 'https://mihwaralarab-1072625241731.me-central1.run.app';
 
 // Project status mappings
 export const PROJECT_STATUS = {
