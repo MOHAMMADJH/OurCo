@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://mohjaspy.pythonanywhere.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://mihwaralarab-1072625241731.me-central1.run.app/api';
 
 export interface ICategory {
   id: string;

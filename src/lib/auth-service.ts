@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://mohjaspy.pythonanywhere.com';
+const API_BASE_URL = 'https://mihwaralarab-1072625241731.me-central1.run.app';
 
 interface User {
   id: number | string; // Allow both number and string for compatibility

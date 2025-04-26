@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { authService } from './auth-service';
 
-const API_BASE_URL = 'https://mohjaspy.pythonanywhere.com';
+const API_BASE_URL = 'https://mihwaralarab-1072625241731.me-central1.run.app'; // Updated URL
 
 export interface ServiceCategory {
   id: string;

@@ -79,9 +79,9 @@ export const getApiBaseUrl = (): string => {
   
   // Default to production URL if not in development
   if (import.meta.env.PROD) {
-    return 'https://mohjaspy.pythonanywhere.com/';
+    return 'https://mihwaralarab-1072625241731.me-central1.run.app/';
   }
   
-  // Use localhost for development
-  return 'https://mohjaspy.pythonanywhere.com';
+  // Use new URL for development as well, unless overridden by VITE_API_BASE_URL
+  return 'https://mihwaralarab-1072625241731.me-central1.run.app';
 };
